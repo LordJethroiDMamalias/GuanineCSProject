@@ -1,4 +1,4 @@
-package GuanineCSProject;
+package codes;
 
 import javax.swing.*;
 import java.awt.*;
@@ -90,110 +90,144 @@ public class Dialog implements KeyListener, ActionListener {
     }
 
     private void setupPanel(JLayeredPane layers, int gridW, int gridH) {
-        if (panel.getParent() == null) {
-            Rectangle constraints = new Rectangle(1, gridH - 2, gridW - 2, 2);
-            layers.add(panel, constraints);
-            layers.setLayer(panel, JLayeredPane.POPUP_LAYER);
+        try {
+            if (panel.getParent() == null) {
+                Rectangle constraints = new Rectangle(1, gridH - 2, gridW - 2, 2);
+                layers.add(panel, constraints);
+                layers.setLayer(panel, JLayeredPane.POPUP_LAYER);
+            }
+            panel.setVisible(true);
+            layers.revalidate();
+            layers.repaint();
+        } catch (Exception e) {
+            System.err.println("Error in setupPanel: " + e.getMessage());
         }
-        panel.setVisible(true);
-        layers.revalidate();
-        layers.repaint();
     }
 
     private void prepareNextLine() {
-        currentText = dialogQueue[queueIndex];
-        charIndex = 0;
-        dialogFinished = false;
-        textSpace.setText(""); 
-        timer.setDelay(25);
-        timer.setInitialDelay(100);
-        timer.start();
+        try {
+            currentText = dialogQueue[queueIndex];
+            charIndex = 0;
+            dialogFinished = false;
+            textSpace.setText(""); 
+            timer.setDelay(25);
+            timer.setInitialDelay(100);
+            timer.start();
+        } catch (Exception e) {
+            System.err.println("Error in prepareNextLine: " + e.getMessage());
+        }
     }
     
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (charIndex < currentText.length()) {
-            char currentChar = currentText.charAt(charIndex);
-            textSpace.append(String.valueOf(currentChar));
-            charIndex++;
+        try {
+            if (charIndex < currentText.length()) {
+                char currentChar = currentText.charAt(charIndex);
+                textSpace.append(String.valueOf(currentChar));
+                charIndex++;
 
-            int nextDelay = 25;
-            if (currentChar == '.' || currentChar == '?' || currentChar == '!') nextDelay = 400;
-            else if (currentChar == ',' || currentChar == ':' || currentChar == ';') nextDelay = 200;
+                int nextDelay = 25;
+                if (currentChar == '.' || currentChar == '?' || currentChar == '!') nextDelay = 400;
+                else if (currentChar == ',' || currentChar == ':' || currentChar == ';') nextDelay = 200;
 
-            timer.setDelay(nextDelay);
-        } else {
-            timer.stop();
-            dialogFinished = true;
+                timer.setDelay(nextDelay);
+            } else {
+                timer.stop();
+                dialogFinished = true;
+            }
+        } catch (Exception ex) {
+            System.err.println("Error in actionPerformed: " + ex.getMessage());
         }
     }
 
     private void renderChoices() {
-        choicesDisplayed = true;
-        textSpace.setText("\n"); 
-        for (int i = 0; i < currentChoices.length; i++) {
-            String prefix = (i == selectedChoice) ? "  * " : "    ";
-            textSpace.append(prefix + currentChoices[i] + "          ");
+        try {
+            choicesDisplayed = true;
+            textSpace.setText("\n"); 
+            if (currentChoices != null) {
+                for (int i = 0; i < currentChoices.length; i++) {
+                    String prefix = (i == selectedChoice) ? "  * " : "    ";
+                    textSpace.append(prefix + currentChoices[i] + "          ");
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error in renderChoices: " + e.getMessage());
         }
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (!isVisible) return;
-
-        if (choicesDisplayed) {
-            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                selectedChoice = Math.max(0, selectedChoice - 1);
-                renderChoices();
-                return;
-            }
-            if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-                selectedChoice = Math.min(currentChoices.length - 1, selectedChoice + 1);
-                renderChoices();
-                return;
-            }
-        }
-
-        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
-            if (!canSkip) return;
-
-            if (!dialogFinished) {
-                timer.stop();
-                textSpace.setText(currentText);
-                dialogFinished = true;
-                return;
-            }
-
-            if (dialogFinished && !choicesDisplayed && queueIndex == dialogQueue.length - 1 && currentChoices != null) {
-                renderChoices();
-                return;
-            }
+        try {
+            if (!isVisible) return;
 
             if (choicesDisplayed) {
-                isVisible = false; 
-                hide();
-                choiceEvents[selectedChoice].run();
-                return;
-            }
-
-            if (dialogFinished) {
-                queueIndex++;
-                if (queueIndex < dialogQueue.length) {
-                    prepareNextLine();
-                } else {
-                    hide();
+                if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                    selectedChoice = Math.max(0, selectedChoice - 1);
+                    renderChoices();
+                    return;
+                }
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                    selectedChoice = Math.min(currentChoices.length - 1, selectedChoice + 1);
+                    renderChoices();
+                    return;
                 }
             }
+
+            if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                if (!canSkip) return;
+
+                if (!dialogFinished) {
+                    timer.stop();
+                    textSpace.setText(currentText);
+                    dialogFinished = true;
+                    return;
+                }
+
+                if (dialogFinished && !choicesDisplayed && queueIndex == dialogQueue.length - 1 && currentChoices != null) {
+                    renderChoices();
+                    return;
+                }
+
+                if (choicesDisplayed) {
+                    isVisible = false; 
+                    hide();
+                    if (choiceEvents != null && selectedChoice >= 0 && selectedChoice < choiceEvents.length && choiceEvents[selectedChoice] != null) {
+                        choiceEvents[selectedChoice].run();
+                    }
+                    return;
+                }
+
+                if (dialogFinished) {
+                    queueIndex++;
+                    if (queueIndex < dialogQueue.length) {
+                        prepareNextLine();
+                    } else {
+                        hide();
+                    }
+                }
+            }
+        } catch (Exception f) {
+            System.err.println("Error in keyPressed: " + f.getMessage());
         }
     }
 
     public void hide() {
-        timer.stop();
-        panel.setVisible(false);
-        isVisible = false;
+        try {
+            timer.stop();
+            panel.setVisible(false);
+            isVisible = false;
+        } catch (Exception e) {
+            System.err.println("Error in hide: " + e.getMessage());
+        }
     }
 
-    public void addKey(JFrame frame) { frame.addKeyListener(this); }
+    public void addKey(JFrame frame) { 
+        try {
+            frame.addKeyListener(this);
+        } catch (Exception e) {
+            System.err.println("Error in addKey: " + e.getMessage());
+        }
+    }
     public boolean isVisible() { return isVisible; }
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
