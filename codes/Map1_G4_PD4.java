@@ -40,23 +40,23 @@ public class Map1_G4_PD4 implements KeyListener {
         int tw = frameWidth / mapWidth;
         int th = frameHeight / mapHeight;
 
-        wall = scale("Images/G4_wall.png", tw, th);
-        tile = scale("Images/G4_tile.png", tw, th);
-        machine = scale("Images/G4_machine.png", tw, th);
-        pipe = scale("Images/G4_pipe.png", tw, th);
+        wall = scale("images/G4_wall.png", tw, th);
+        tile = scale("images/G4_tile.png", tw, th);
+        machine = scale("images/G4_machine.png", tw, th);
+        pipe = scale("images/G4_pipe.png", tw, th);
 
         for(int i = 0; i < 4; i++) {
-            pUp[i] = scale("Images/up_" + (i+1) + ".png", tw/2, th);
-            pDown[i] = scale("Images/down_" + (i+1) + ".png", tw/2, th);
-            pLeft[i] = scale("Images/left_" + (i+1) + ".png", tw/2, th);
-            pRight[i] = scale("Images/right_" + (i+1) + ".png", tw/2, th);
+            pUp[i] = scale("images/up_" + (i+1) + ".png", tw/2, th);
+            pDown[i] = scale("images/down_" + (i+1) + ".png", tw/2, th);
+            pLeft[i] = scale("images/left_" + (i+1) + ".png", tw/2, th);
+            pRight[i] = scale("images/right_" + (i+1) + ".png", tw/2, th);
         }
 
-        NPCIcon = scale("Images/G4_bro1.png", tw * 4, th * 6);
-        NPCIcon2 = scale("Images/G4_bro2.png", tw * 4, th * 6);
-        rocket1 = scale("Images/G4_rocket1.png", tw * 2, th * 2);
-        rocket2 = scale("Images/G4_rocket2.png", tw * 2, th * 2);
-        rocket3 = scale("Images/G4_rocket3.png", tw * 2, th * 2);
+        NPCIcon = scale("images/G4_bro1.png", tw * 4, th * 6);
+        NPCIcon2 = scale("images/G4_bro2.png", tw * 4, th * 6);
+        rocket1 = scale("images/G4_rocket1.png", tw * 2, th * 2);
+        rocket2 = scale("images/G4_rocket2.png", tw * 2, th * 2);
+        rocket3 = scale("images/G4_rocket3.png", tw * 2, th * 2);
 
         characterPlace = new int[]{
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -248,7 +248,7 @@ public class Map1_G4_PD4 implements KeyListener {
                                 rocketLocation = -1;
                                 NPCLocation = -1;
 
-                                File f = new File("Images/G4_explosion.gif");
+                                File f = new File("images/G4_explosion.gif");
                                 int tw = frameWidth / mapWidth;
                                 int th = frameHeight / mapHeight;
                                 String html = "<html><img src='" + f.toURI().toString() + "' width='" + (tw * 4) + "' height='" + (th * 6) + "'></html>";
