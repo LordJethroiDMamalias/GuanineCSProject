@@ -11,7 +11,7 @@ import java.awt.event.*;
 import java.util.Random;
 import javax.swing.*;
 
-public class Map2_G10_PD6 extends JFrame {
+public class G10_Room2_PD6 extends JFrame {
     private final int GRID = 11;
     private final int TILE_SIZE = 60; 
 
@@ -37,7 +37,7 @@ public class Map2_G10_PD6 extends JFrame {
     private ImageIcon wallIco, floorIco, doorIco, npcIco;
     private ImageIcon pUp, pDown, pLeft, pRight;
 
-    public Map2_G10_PD6() {
+    public G10_Room2_PD6() {
         loadImages();
         setTitle("Dungeon");
         setLayout(new GridLayout(GRID, GRID));
@@ -173,7 +173,7 @@ public class Map2_G10_PD6 extends JFrame {
         JOptionPane.showMessageDialog(this, "Guardian defeated! The exit door is now unlocked.");
     }
 
-    public static void main(String[] args) { new Map2_G10_PD6(); }
+    public static void main(String[] args) { new G10_Room2_PD6(); }
 }
 
 
