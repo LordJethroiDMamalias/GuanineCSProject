@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
  */
-package mazegame;
+package codes;
 
 /**
  *
@@ -38,7 +38,7 @@ import javax.swing.*;
  *  javac MazeGame.java
  *  java MazeGame
  */
-public class Map1_G10_PD4 extends JPanel implements ActionListener, KeyListener {
+public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener {
 
     // grid
     private static final int CELL = 32;
@@ -92,7 +92,7 @@ public class Map1_G10_PD4 extends JPanel implements ActionListener, KeyListener 
             {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
     };
 
-    public Map1_G10_PD4() {
+    public G10_Room1_PD4() {
         setPreferredSize(new Dimension(COLS * CELL, ROWS * CELL));
         setBackground(Color.BLACK);
         setFocusable(true);
@@ -412,7 +412,7 @@ public class Map1_G10_PD4 extends JPanel implements ActionListener, KeyListener 
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("Maze Game - Medium (Clean)");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            Map1_G10_PD4 panel = new Map1_G10_PD4();
+            G10_Room1_PD4 panel = new G10_Room1_PD4();
             f.add(panel);
             f.pack();
             f.setLocationRelativeTo(null);
