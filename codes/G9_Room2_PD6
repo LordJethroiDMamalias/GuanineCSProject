@@ -68,22 +68,22 @@ public class PD6_gameobj2 implements KeyListener {
         int cw = (int)(tw * 0.6); 
         int ch = (int)(th * 0.6);
 
-        pStand = scale("images/pFront.png", cw, ch);
-        pFrontW = scale("images/pFront.png", cw, ch);
-        pFrontW1 = scale("images/pFrontLW.png", cw, ch);
-        pFrontW2 = scale("images/pFrontRW.png", cw, ch);
-        pBack = scale("images/pBack.png", cw, ch);
-        pBack1 = scale("images/pBack1.png", cw, ch);
-        pBack2 = scale("images/pBack2.png", cw, ch);
-        pLeft = scale("images/pLeft.png", cw, ch);
-        pLeft1 = scale("images/pLeft1.png", cw, ch);
-        pLeft2 = scale("images/pLeft2.png", cw, ch);
-        pRight = scale("images/pRight.png", cw, ch);
-        pRight1 = scale("images/pRight1.png", cw, ch);
-        pRight2 = scale("images/pRight2.png", cw, ch);
+        pStand = scale("images/G9_pFront.png", cw, ch);
+        pFrontW = scale("images/G9_pFront.png", cw, ch);
+        pFrontW1 = scale("images/G9_pFrontLW.png", cw, ch);
+        pFrontW2 = scale("images/G9_pFrontRW.png", cw, ch);
+        pBack = scale("images/G9_pBack.png", cw, ch);
+        pBack1 = scale("images/G9_pBack1.png", cw, ch);
+        pBack2 = scale("images/G9_pBack2.png", cw, ch);
+        pLeft = scale("images/G9_pLeft.png", cw, ch);
+        pLeft1 = scale("images/G9_pLeft1.png", cw, ch);
+        pLeft2 = scale("images/G9_pLeft2.png", cw, ch);
+        pRight = scale("images/G9_pRight.png", cw, ch);
+        pRight1 = scale("images/G9_pRight1.png", cw, ch);
+        pRight2 = scale("images/G9_pRight2.png", cw, ch);
         
-        grandma = scale("images/grammy.png", tw, th);
-        grandpa = scale("images/grandpa.png", tw, th);
+        grandma = scale("images/G9_grammy.png", tw, th);
+        grandpa = scale("images/G9_grandpa.png", tw, th);
 
         mapLayout = new int[]{
             1,0,0,0,1,1,1,0,0,0,0,
