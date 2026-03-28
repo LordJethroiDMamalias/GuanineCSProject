@@ -86,15 +86,15 @@ public class G8_Room2_PD6 implements KeyListener {
             int tileSizeW = frameWidth / mapWidth;
             int tileSizeH = frameHeight / mapHeight;
             
-            BGimage = loadSafeIcon("images/PD6BG.png", frameWidth, frameHeight);
-            pUp1 = loadSafeIcon("images/down1.png", tileSizeW, tileSizeH);
-            pUp2 = loadSafeIcon("images/up2.png", tileSizeW, tileSizeH);
-            pDown1 = loadSafeIcon("images/down1.png", tileSizeW, tileSizeH);
-            pDown2 = loadSafeIcon("images/down2.png", tileSizeW, tileSizeH);
-            pLeft1 = loadSafeIcon("images/left1.png", tileSizeW, tileSizeH);
-            pLeft2 = loadSafeIcon("images/left2.png", tileSizeW, tileSizeH);
-            pRight1 = loadSafeIcon("images/right1.png", tileSizeW, tileSizeH);
-            pRight2 = loadSafeIcon("images/right2.png", tileSizeW, tileSizeH);
+            BGimage = loadSafeIcon("images/G8_PD6BG.png", frameWidth, frameHeight);
+            pUp1 = loadSafeIcon("images/G8_down1.png", tileSizeW, tileSizeH);
+            pUp2 = loadSafeIcon("images/G8_up2.png", tileSizeW, tileSizeH);
+            pDown1 = loadSafeIcon("images/G8_down1.png", tileSizeW, tileSizeH);
+            pDown2 = loadSafeIcon("images/G8_down2.png", tileSizeW, tileSizeH);
+            pLeft1 = loadSafeIcon("images/G8_left1.png", tileSizeW, tileSizeH);
+            pLeft2 = loadSafeIcon("images/G8_left2.png", tileSizeW, tileSizeH);
+            pRight1 = loadSafeIcon("images/G8_right1.png", tileSizeW, tileSizeH);
+            pRight2 = loadSafeIcon("images/G8_right2.png", tileSizeW, tileSizeH);
 
             mapLayout = new int[]{
                 0,0,0,0,0,0,0,0,0,0,0,
