@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 //grp: ancla, badayos, sepe
-public class PD4_gameobj1 implements KeyListener {
+public class G9_Room1_PD4 implements KeyListener {
 
     JFrame frame;
     JLayeredPane layers;
