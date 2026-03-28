@@ -154,30 +154,48 @@ public class G7_Room2_PD6 extends JPanel implements KeyListener, ActionListener 
 
     void startBattle() {
 
-        String q1 = JOptionPane.showInputDialog(this, "5 + 3?");
-        if (!"8".equals(q1)) fail();
+        try {
+            String q1 = JOptionPane.showInputDialog(this, "5 + 3?");
+            if (q1 == null || !q1.trim().equals("8")) {
+                fail("Wrong answer to Q1");
+                return;
+            }
 
-        String q2 = JOptionPane.showInputDialog(this, "Capital of France?");
-        if (!"Paris".equalsIgnoreCase(q2)) fail();
+            String q2 = JOptionPane.showInputDialog(this, "Capital of France?");
+            if (q2 == null || !q2.trim().equalsIgnoreCase("Paris")) {
+                fail("Wrong answer to Q2");
+                return;
+            }
 
-        String q3 = JOptionPane.showInputDialog(this, "Java keyword for inheritance?");
-        if (!"extends".equalsIgnoreCase(q3)) fail();
+            String q3 = JOptionPane.showInputDialog(this, "Java keyword for inheritance?");
+            if (q3 == null || !q3.trim().equalsIgnoreCase("extends")) {
+                fail("Wrong answer to Q3");
+                return;
+            }
 
-        gameFinished = true;
-        gameWon = true;
+            gameFinished = true;
+            gameWon = true;
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Invalid input. Please enter valid answers.");
+        }
     }
 
-    void fail() {
-        JOptionPane.showMessageDialog(this, "Game Over!");
+    void fail(String message) {
+        JOptionPane.showMessageDialog(this, "Game Over!\n" + message);
         System.exit(0);
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_UP) up = true;
-        if (e.getKeyCode() == KeyEvent.VK_DOWN) down = true;
-        if (e.getKeyCode() == KeyEvent.VK_LEFT) left = true;
-        if (e.getKeyCode() == KeyEvent.VK_RIGHT) right = true;
+
+        int key = e.getKeyCode();
+
+        if (key == KeyEvent.VK_UP) up = true;
+        else if (key == KeyEvent.VK_DOWN) down = true;
+        else if (key == KeyEvent.VK_LEFT) left = true;
+        else if (key == KeyEvent.VK_RIGHT) right = true;
     }
 
     @Override
@@ -189,86 +207,4 @@ public class G7_Room2_PD6 extends JPanel implements KeyListener, ActionListener 
     }
 
     @Override public void keyTyped(KeyEvent e) {}
-
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Maze Adventure");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(new G7_Room2_PD6());
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-    }
-}
-
-class GameObject {
-    protected int x, y;
-    protected int size;
-    protected Image image;
-
-    public GameObject(int x, int y, int size, Image image) {
-        this.x = x;
-        this.y = y;
-        this.size = size;
-        this.image = image;
-    }
-
-    public void draw(Graphics g) {
-        g.drawImage(image, x, y, size, size, null);
-    }
-
-    public int getX() { return x; }
-    public int getY() { return y; }
-
-    public void setPosition(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-}
-
-class Character extends GameObject {
-
-    protected int speed;
-
-    public Character(int x, int y, int size, Image image, int speed) {
-        super(x, y, size, image);
-        this.speed = speed;
-    }
-
-    public void move(int dx, int dy) {
-        x += dx * speed;
-        y += dy * speed;
-    }
-
-    public void move(int dx, int dy, int customSpeed) {
-        x += dx * customSpeed;
-        y += dy * customSpeed;
-    }
-}
-
-class Player extends Character {
-
-    public Player(int x, int y, int size, Image image, int speed) {
-        super(x, y, size, image, speed);
-    }
-
-    @Override
-    public void draw(Graphics g) {
-        super.draw(g);
-        g.setColor(Color.YELLOW);
-        g.drawRect(x, y, size, size);
-    }
-}
-
-class Enemy extends Character {
-
-    public Enemy(int x, int y, int size, Image image, int speed) {
-        super(x, y, size, image, speed);
-    }
-
-    @Override
-    public void draw(Graphics g) {
-        super.draw(g);
-        g.setColor(Color.RED);
-        g.drawRect(x, y, size, size);
-    }
 }
