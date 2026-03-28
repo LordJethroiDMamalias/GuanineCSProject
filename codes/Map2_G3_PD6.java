@@ -119,15 +119,15 @@ public class Main extends JPanel implements ActionListener, KeyListener {
 
       
         try {
-            bg = new ImageIcon(getClass().getResource("/ASSETS/Group3_background.png")).getImage();
-            upStrip = new ImageIcon(getClass().getResource("/ASSETS/Group3_MC_walkUp.png")).getImage();
-            downStrip = new ImageIcon(getClass().getResource("/ASSETS/Group3_MC_walkDown.png")).getImage();
-            leftStrip = new ImageIcon(getClass().getResource("/ASSETS/Group3_MC_walkLeft.png")).getImage();
-            rightStrip = new ImageIcon(getClass().getResource("/ASSETS/Group3_MC_walkRight.png")).getImage();
+            bg = new ImageIcon(getClass().getResource("/ASSETS/G3_background.png")).getImage();
+            upStrip = new ImageIcon(getClass().getResource("/ASSETS/G3_MC_walkUp.png")).getImage();
+            downStrip = new ImageIcon(getClass().getResource("/ASSETS/G3_MC_walkDown.png")).getImage();
+            leftStrip = new ImageIcon(getClass().getResource("/ASSETS/G3_MC_walkLeft.png")).getImage();
+            rightStrip = new ImageIcon(getClass().getResource("/ASSETS/G3_MC_walkRight.png")).getImage();
             
-            npcSprite = new ImageIcon(getClass().getResource("/ASSETS/Group3_npc.png")).getImage();
-            shiningSprite = new ImageIcon(getClass().getResource("/ASSETS/Group3_light.png")).getImage();
-            niteIcon = new ImageIcon(getClass().getResource("/ASSETS/Group3_nite.png")).getImage();
+            npcSprite = new ImageIcon(getClass().getResource("/ASSETS/G3_npc.png")).getImage();
+            shiningSprite = new ImageIcon(getClass().getResource("/ASSETS/G3_light.png")).getImage();
+            niteIcon = new ImageIcon(getClass().getResource("/ASSETS/G3_nite.png")).getImage();
         } catch (Exception e) {
           
             System.err.println("Error loading assets: " + e.getMessage());
