@@ -6,7 +6,7 @@ import java.awt.event.*;
 
 //Group 4: Asegurado, Mamalias, Mazo
 //with major help from deepai
-public class Map2_G4_PD6 implements KeyListener {
+public class G4_Room2_PD6 implements KeyListener {
     JFrame frame;
     JLayeredPane layers;
     ImageIcon wall, tile, machine, pipe;
@@ -36,7 +36,7 @@ public class Map2_G4_PD6 implements KeyListener {
 
     Dialog dialog = new Dialog();
 
-    public Map2_G4_PD6() {
+    public G4_Room2_PD6() {
         frame = new JFrame();
         int tw = frameWidth / mapWidth;
         int th = frameHeight / mapHeight;
@@ -268,6 +268,6 @@ public void keyPressed(KeyEvent e) {
     @Override public void keyTyped(KeyEvent e) {}
 
     /*public static void main(String[] args) { 
-        new PD6().setFrame(); 
+        new G4_Room2_PD6().setFrame(); 
     }*/
 }

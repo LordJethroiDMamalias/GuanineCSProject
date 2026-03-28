@@ -7,7 +7,7 @@ import java.io.File;
 
 
 //yea bai i broke the explosion code
-public class Map1_G4_PD4 implements KeyListener {
+public class G4_Room1_PD4 implements KeyListener {
     JFrame frame;
     JLayeredPane layers;
     ImageIcon wall, tile, machine, pipe;
@@ -35,7 +35,7 @@ public class Map1_G4_PD4 implements KeyListener {
 
     Dialog dialog = new Dialog();
 
-    public Map1_G4_PD4() {
+    public G4_Room1_PD4() {
         frame = new JFrame();
         int tw = frameWidth / mapWidth;
         int th = frameHeight / mapHeight;
@@ -303,6 +303,6 @@ public class Map1_G4_PD4 implements KeyListener {
     @Override public void keyTyped(KeyEvent e) {}
 
     public static void main(String[] args) { 
-        new Map1_G4_PD4().setFrame(); 
+        new G4_Room1_PD4().setFrame(); 
     }
 }
