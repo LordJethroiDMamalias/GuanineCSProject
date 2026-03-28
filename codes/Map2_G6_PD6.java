@@ -1,5 +1,5 @@
 //Guanine Group 6: Estrellan, Gomez, Pañares
-package GuanineCSProject;
+package codes;
 
 import javax.swing.*;
 import java.awt.*;
