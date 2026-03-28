@@ -42,8 +42,7 @@ public class G2_Room2_PD7 implements KeyListener {
             frame = new JFrame("Living Room");
             int tw = frameWidth / mapWidth;
             int th = frameHeight / mapHeight;
-            
-            // Loading and scaling assets with potential for NullPointer or IO issues
+
             backgroundImage = new ImageIcon("images/G2_LivingRoomMap.png"); 
             if (backgroundImage.getImageLoadStatus() == MediaTracker.ERRORED) {
                 throw new FileNotFoundException("Background image not found at images/map.png");
@@ -134,7 +133,6 @@ public class G2_Room2_PD7 implements KeyListener {
         try {
             ImageIcon icon = new ImageIcon(path);
             if (icon.getImageLoadStatus() == MediaTracker.ERRORED) {
-                // We return a placeholder or handle it silenty to avoid crashing during walk cycles
                 return new ImageIcon(new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB));
             }
             return new ImageIcon(icon.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH));
