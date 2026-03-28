@@ -85,7 +85,7 @@ public class Main extends JPanel implements ActionListener, KeyListener {
     boolean showNiteSplash = false;
     long splashStartTime = 0;
 
-    // For Exception Feedback
+   
     String statusMessage = "";
     long statusTimer = 0;
 
@@ -117,19 +117,19 @@ public class Main extends JPanel implements ActionListener, KeyListener {
         setFocusable(true);
         addKeyListener(this);
 
-        // EXCEPTION HANDLING: Resource Loading
+      
         try {
-            bg = new ImageIcon(getClass().getResource("/ASSETS/background.png")).getImage();
-            upStrip = new ImageIcon(getClass().getResource("/ASSETS/MC_walkUp.png")).getImage();
-            downStrip = new ImageIcon(getClass().getResource("/ASSETS/MC_walkDown.png")).getImage();
-            leftStrip = new ImageIcon(getClass().getResource("/ASSETS/MC_walkLeft.png")).getImage();
-            rightStrip = new ImageIcon(getClass().getResource("/ASSETS/MC_walkRight.png")).getImage();
+            bg = new ImageIcon(getClass().getResource("/ASSETS/Group3_background.png")).getImage();
+            upStrip = new ImageIcon(getClass().getResource("/ASSETS/Group3_MC_walkUp.png")).getImage();
+            downStrip = new ImageIcon(getClass().getResource("/ASSETS/Group3_MC_walkDown.png")).getImage();
+            leftStrip = new ImageIcon(getClass().getResource("/ASSETS/Group3_MC_walkLeft.png")).getImage();
+            rightStrip = new ImageIcon(getClass().getResource("/ASSETS/Group3_MC_walkRight.png")).getImage();
             
-            npcSprite = new ImageIcon(getClass().getResource("/ASSETS/npc.png")).getImage();
-            shiningSprite = new ImageIcon(getClass().getResource("/ASSETS/light.png")).getImage();
-            niteIcon = new ImageIcon(getClass().getResource("/ASSETS/nite.png")).getImage();
+            npcSprite = new ImageIcon(getClass().getResource("/ASSETS/Group3_npc.png")).getImage();
+            shiningSprite = new ImageIcon(getClass().getResource("/ASSETS/Group3_light.png")).getImage();
+            niteIcon = new ImageIcon(getClass().getResource("/ASSETS/Group3_nite.png")).getImage();
         } catch (Exception e) {
-            // If assets are missing, we log it and provide a message
+          
             System.err.println("Error loading assets: " + e.getMessage());
             statusMessage = "Warning: Assets missing. Check /ASSETS/ folder.";
             statusTimer = System.currentTimeMillis();
@@ -169,7 +169,7 @@ public class Main extends JPanel implements ActionListener, KeyListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        // EXCEPTION HANDLING: Logic wrapper
+      
         try {
             if (showNiteSplash) {
                 if (System.currentTimeMillis() - splashStartTime > 2000) {
@@ -258,7 +258,7 @@ public class Main extends JPanel implements ActionListener, KeyListener {
         int px = player.getX();
         int py = player.getY();
         
-        // Safety check for currentStrip to prevent NPE if image failed to load
+        
         if (currentStrip != null) {
             g.drawImage(currentStrip, px, py, px + frameWidth * scale, py + frameHeight * scale, sx, 0, sx + frameWidth, frameHeight, null);
         }
@@ -306,7 +306,7 @@ public class Main extends JPanel implements ActionListener, KeyListener {
             g.drawString(splashTxt, (getWidth() - txtWidth) / 2, (getHeight() / 2) + 180);
         }
 
-        // Exception Message Overlay
+    
         if (System.currentTimeMillis() - statusTimer < 3000 && !statusMessage.isEmpty()) {
             g.setColor(new Color(255, 0, 0, 200));
             g.fillRect(200, 10, 400, 30);
@@ -375,7 +375,7 @@ public class Main extends JPanel implements ActionListener, KeyListener {
 
         int key = e.getKeyCode();
 
-        // EXCEPTION HANDLING: Invalid keyboard keys for movement (Arrow keys)
+       
         if (key == KeyEvent.VK_UP || key == KeyEvent.VK_DOWN || key == KeyEvent.VK_LEFT || key == KeyEvent.VK_RIGHT) {
             setStatus("Invalid input. Please use W, A, S, D for movement.");
             return;
@@ -406,12 +406,12 @@ public class Main extends JPanel implements ActionListener, KeyListener {
             } else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
                 if (currentInput.length() > 0) currentInput = currentInput.substring(0, currentInput.length() - 1);
             } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                // Handling Escape as a choice that isn't allowed during the quiz based on your logic
+                
                 setStatus("You must finish the equation to exit!");
             } else {
                 char c = e.getKeyChar();
                 
-                // EXCEPTION HANDLING: Entering letters instead of numbers (for basic coefficients)
+              
                 if (!finalBossTriggered && Character.isLetter(c)) {
                     setStatus("Invalid input. Please enter numbers and commas.");
                 } else if (Character.isLetterOrDigit(c) || c == ',' || c == '+') {
@@ -446,7 +446,7 @@ public class Main extends JPanel implements ActionListener, KeyListener {
                     }
                 }
                 if (!itemFound) {
-                    // This handles pressing E when nothing is near
+                    
                     setStatus("Nothing to interact with here.");
                 }
             }
@@ -525,7 +525,7 @@ public class Main extends JPanel implements ActionListener, KeyListener {
     @Override public void keyTyped(KeyEvent e) {}
 
     public static void main(String[] args) {
-        // EXCEPTION HANDLING: App Launch
+       
         try {
             JFrame frame = new JFrame("Chemistry Quest");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
