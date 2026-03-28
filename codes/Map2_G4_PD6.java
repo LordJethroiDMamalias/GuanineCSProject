@@ -42,25 +42,25 @@ public class Map2_G4_PD6 implements KeyListener {
         int th = frameHeight / mapHeight;
 
         //these are .png so that they're invisible. that's intended. it doesnt output an error in netbeans for me so
-        wall = scale("Images/.png", tw, th);
-        tile = scale("Images/.png", tw, th);
-        machine = scale("Images/.png", tw, th);
-        pipe = scale("Images/.png", tw, th);
+        wall = scale("images/.png", tw, th);
+        tile = scale("images/.png", tw, th);
+        machine = scale("images/.png", tw, th);
+        pipe = scale("images/.png", tw, th);
         
         map = new ImageIcon("images/G4_map.png");
         door = new ImageIcon("images/G4_door.png");
         painting = new ImageIcon("images/G4_painting.png");
 
         for(int i = 0; i < 4; i++) {
-            pUp[i] = scale("Images/up_" + (i+1) + ".png", tw/2, th);
-            pDown[i] = scale("Images/down_" + (i+1) + ".png", tw/2, th);
-            pLeft[i] = scale("Images/left_" + (i+1) + ".png", tw/2, th);
-            pRight[i] = scale("Images/right_" + (i+1) + ".png", tw/2, th);
+            pUp[i] = scale("images/up_" + (i+1) + ".png", tw/2, th);
+            pDown[i] = scale("images/down_" + (i+1) + ".png", tw/2, th);
+            pLeft[i] = scale("images/left_" + (i+1) + ".png", tw/2, th);
+            pRight[i] = scale("images/right_" + (i+1) + ".png", tw/2, th);
         }
 
         //invisible
-        NPCIcon = scale("Images/.png", tw, th);
-        NPCIcon2 = scale("Images/.png", tw, th);
+        NPCIcon = scale("images/.png", tw, th);
+        NPCIcon2 = scale("images/.png", tw, th);
 
         characterPlace = new int[]{
             0,0,0,0,1,2,1,0,0,0,0,
