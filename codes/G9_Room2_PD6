@@ -1,0 +1,283 @@
+package codes;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+/*grp: ancla, badayos, sepe*/
+public class PD6_gameobj2 implements KeyListener {
+    // --- UI Components ---
+    JFrame frame;
+    JLayeredPane layeredPane;
+    JLabel background;
+    JPanel charPanel; 
+    JLabel[] gridSlots;
+
+    // --- Assets ---
+    ImageIcon pStand, pFrontW, pFrontW1, pFrontW2, pBack, pBack1, pBack2, pLeft, pLeft1, pLeft2, pRight, pRight1, pRight2;
+    ImageIcon grandma, grandpa;
+
+    // --- Settings & State ---
+    int mapW = 11;
+    int mapH = 11;
+    int frW = 660;
+    int frH = 660;
+    int characterPosition = 93; 
+    int grandmaPos = 92;
+    int grandpaPos = 78;
+    int binPos1 = 102; 
+    int binPos2 = 103; 
+    int animFrame = 0;
+    String direction = "down";
+    
+    // --- Encapsulated Trash System ---
+    int[] inv = new int[10]; 
+    int itemsHeld = 0;      
+    int[] mapTrash = {13, 37, 48, 75, 79, 85, 108, 104};
+    GameEvent trashEvent = new trashThrown();
+    
+    public int totalTrash = mapTrash.length;
+    private int trashCleared = 0; // Encapsulated: Now private
+    public boolean rewardGiven = false;
+    public boolean[] cleared; 
+    int[] mapLayout = new int[121]; 
+    Dialogue dialog = new Dialogue();
+
+    // --- Getter and Setter for trashCleared ---
+    public int getTrashCleared() {
+        return trashCleared;
+    }
+
+    public void incrementTrashCleared() {
+        this.trashCleared++;
+    }
+
+    public PD6_gameobj2() {
+        frame = new JFrame("PD6");
+        layeredPane = new JLayeredPane();
+        cleared = new boolean[121]; 
+        
+        ImageIcon mapImg = new ImageIcon("images/map2.png");
+        if (mapImg.getImageLoadStatus() == MediaTracker.COMPLETE) {
+             mapImg = new ImageIcon(mapImg.getImage().getScaledInstance(frW, frH, Image.SCALE_SMOOTH));
+        }
+        background = new JLabel(mapImg);
+
+        int tw = frW / mapW;
+        int th = frH / mapH;
+        int cw = (int)(tw * 0.6); 
+        int ch = (int)(th * 0.6);
+
+        pStand = scale("images/pFront.png", cw, ch);
+        pFrontW = scale("images/pFront.png", cw, ch);
+        pFrontW1 = scale("images/pFrontLW.png", cw, ch);
+        pFrontW2 = scale("images/pFrontRW.png", cw, ch);
+        pBack = scale("images/pBack.png", cw, ch);
+        pBack1 = scale("images/pBack1.png", cw, ch);
+        pBack2 = scale("images/pBack2.png", cw, ch);
+        pLeft = scale("images/pLeft.png", cw, ch);
+        pLeft1 = scale("images/pLeft1.png", cw, ch);
+        pLeft2 = scale("images/pLeft2.png", cw, ch);
+        pRight = scale("images/pRight.png", cw, ch);
+        pRight1 = scale("images/pRight1.png", cw, ch);
+        pRight2 = scale("images/pRight2.png", cw, ch);
+        
+        grandma = scale("images/grammy.png", tw, th);
+        grandpa = scale("images/grandpa.png", tw, th);
+
+        mapLayout = new int[]{
+            1,0,0,0,1,1,1,0,0,0,0,
+            0,0,0,0,1,1,1,0,0,0,0,
+            1,0,0,0,1,1,1,1,1,0,0,
+            1,0,0,0,0,0,0,0,0,0,0,
+            1,0,0,0,0,0,0,0,0,0,0,
+            1,0,1,1,1,1,1,1,1,1,1,
+            1,0,0,0,0,0,0,0,0,0,1,
+            1,0,0,1,0,1,1,1,0,0,1,
+            1,1,1,1,0,0,1,1,1,0,1,
+            1,1,1,0,0,0,0,0,0,0,1,
+            1,1,1,1,1,1,1,1,1,1,1,
+        };
+        
+        mapLayout[75] = 0;
+        mapLayout[85] = 0;
+
+        gridSlots = new JLabel[mapW * mapH];
+        for (int i = 0; i < gridSlots.length; i++) {
+            gridSlots[i] = new JLabel();
+            gridSlots[i].setHorizontalAlignment(JLabel.CENTER);
+            gridSlots[i].setVerticalAlignment(JLabel.CENTER);
+        }
+    }
+
+    private void renderEntities() {
+        for (int i = 0; i < gridSlots.length; i++) {
+            if (i == characterPosition) {
+                gridSlots[i].setIcon(getAnimation());
+            } else if (i == grandmaPos) {
+                gridSlots[i].setIcon(grandma);
+            } else if (i == grandpaPos) {
+                gridSlots[i].setIcon(grandpa);
+            } else {
+                boolean trashPresent = false;
+                for (int t : mapTrash) {
+                    if (i == t && t != -1) {
+                        trashPresent = true;
+                        break;
+                    }
+                }
+                gridSlots[i].setIcon(trashPresent ? scale("images/PDs game/univ/trash.png", 30, 30) : null);
+            }
+        }
+    }
+    
+    private void interact() {
+    int targetPos = -1;
+    switch (direction) {
+        case "up":    targetPos = characterPosition - mapW; break;
+        case "down":  targetPos = characterPosition + mapW; break;
+        case "left":  if (characterPosition % mapW != 0) targetPos = characterPosition - 1; break;
+        case "right": if ((characterPosition + 1) % mapW != 0) targetPos = characterPosition + 1; break;
+    }
+
+    // 1. Trash Pickup
+    for (int i = 0; i < mapTrash.length; i++) {
+        if (characterPosition == mapTrash[i] && mapTrash[i] != -1) {
+            if (itemsHeld == 0) {
+                inv[0] = mapTrash[i];
+                itemsHeld = 1;
+                mapTrash[i] = -1; 
+                dialog.show(layeredPane, new String[]{"Picked up trash!"}, null, null, mapW, mapH);
+                renderEntities();
+                return; 
+            }
+        }
+    }
+
+    // 2. Grandma
+    if (targetPos == grandmaPos) {
+        String[] lines;
+        // Check if total trash has been cleared
+        if (allTrashRemoved()) {
+            lines = new String[]{
+                "HMPH..",
+                "YOU ACTUALLY MANAGED TO CLEAN EVERYTHING.",
+                "HERE, TAKE THIS.",
+                "IT’S A GIFT. OR A PIECE OF JUNK.",
+                "NOW GET OUT OF HERE BEFORE I CHANGE MY MIND."
+            };
+        } else {
+            lines = new String[]{
+                "LISTEN CAREFULLY KID.",
+                "RED BIN = NONBIO | GREEN BIN = BIO | BLUE BIN = RECYCLABLES",
+                "IF YOU MESS UP YOU'LL HEAR FROM ME. ALSO..",
+                "IF YOU FIND SOMEONE AROUND MY AGE HERE.. LET ME KNOW. THAT GUY'S A PAIN TO DEAL WITH...",
+            };
+        }
+        SwingUtilities.invokeLater(() -> dialog.show(layeredPane, lines, null, null, mapW, mapH));
+        return;
+    }
+
+    // 3. Grandpa
+    if (targetPos == grandpaPos) {
+        dialog.show(layeredPane, new String[]{
+            "EUGH. KIDS THESE DAYS...",
+            "HAVE YOU SEEN MY WIFE?",
+            "I THINK I'M LOST."
+        }, null, null, mapW, mapH);
+        return;
+    }
+
+    // 4. Bins
+    if (characterPosition == binPos1 || characterPosition == binPos2 || targetPos == binPos1 || targetPos == binPos2) {
+        trashEvent.handle(this, inv, itemsHeld, layeredPane, dialog, mapW, mapH, () -> {
+            itemsHeld = 0;
+            renderEntities();
+        });
+    }
+}
+
+    public boolean allTrashRemoved() {
+        for (int t : mapTrash) {
+            if (t != -1) return false;
+        }
+        return true;
+    }
+    
+    private ImageIcon scale(String path, int w, int h) {
+        ImageIcon icon = new ImageIcon(path);
+        return new ImageIcon(icon.getImage().getScaledInstance(w, h, Image.SCALE_DEFAULT));
+    }
+
+    boolean isBlocked(int pos) {
+        if (pos < 0 || pos >= mapLayout.length) return true;
+        if (pos == grandmaPos || pos == grandpaPos) return true; 
+        return mapLayout[pos] == 1;
+    }
+
+    ImageIcon getAnimation() {
+        if (direction.equals("down"))  return animFrame == 0 ? pFrontW : animFrame == 1 ? pFrontW1 : pFrontW2;
+        if (direction.equals("up"))    return animFrame == 0 ? pBack    : animFrame == 1 ? pBack1    : pBack2;
+        if (direction.equals("left"))  return animFrame == 0 ? pLeft    : animFrame == 1 ? pLeft1    : pLeft2;
+        if (direction.equals("right")) return animFrame == 0 ? pRight   : animFrame == 1 ? pRight1   : pRight2;
+        return pStand;
+    }
+
+    public void setFrame() {
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(false);
+        layeredPane.setPreferredSize(new Dimension(frW, frH));
+        layeredPane.setLayout(new GraphPaperLayout(new Dimension(mapW, mapH)));
+
+        background.setBounds(0, 0, frW, frH);
+        layeredPane.add(background, new Rectangle(0, 0, mapW, mapH));
+        layeredPane.setLayer(background, JLayeredPane.DEFAULT_LAYER);
+
+        charPanel = new JPanel();
+        charPanel.setOpaque(false);
+        charPanel.setLayout(new GraphPaperLayout(new Dimension(mapW, mapH)));
+        charPanel.setBounds(0, 0, frW, frH);
+
+        for (int i = 0; i < gridSlots.length; i++) {
+            charPanel.add(gridSlots[i], new Rectangle(i % mapW, i / mapW, 1, 1));
+        }
+
+        layeredPane.add(charPanel, new Rectangle(0, 0, mapW, mapH));
+        layeredPane.setLayer(charPanel, Integer.valueOf(1));
+
+        frame.add(layeredPane);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.addKeyListener(this);
+        dialog.addKey(frame);
+        renderEntities();
+        frame.setVisible(true);
+        frame.requestFocusInWindow();
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (dialog.isVisible()) return;
+        int nextPos = characterPosition;
+        int key = e.getKeyCode();
+
+        if (key == KeyEvent.VK_SPACE || key == KeyEvent.VK_Z) { 
+            interact(); 
+            return; 
+        }
+
+        if (key == KeyEvent.VK_RIGHT) { direction = "right"; if ((characterPosition + 1) % mapW != 0) nextPos++; }
+        else if (key == KeyEvent.VK_LEFT) { direction = "left"; if (characterPosition % mapW != 0) nextPos--; }
+        else if (key == KeyEvent.VK_DOWN) { direction = "down"; if (characterPosition + mapW < 121) nextPos += mapW; }
+        else if (key == KeyEvent.VK_UP) { direction = "up"; if (characterPosition - mapW >= 0) nextPos -= mapW; }
+
+        if (!isBlocked(nextPos)) {
+            characterPosition = nextPos;
+            animFrame = (animFrame + 1) % 3;
+            renderEntities();
+        }
+    }
+
+    @Override public void keyReleased(KeyEvent e) { animFrame = 0; renderEntities(); }
+    @Override public void keyTyped(KeyEvent e) {}
+}
