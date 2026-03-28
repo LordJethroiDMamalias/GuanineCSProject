@@ -4,6 +4,8 @@
  */
 package codes;
 
+//RASONABE, REDULLA, VILLAROMAN
+
 /**
  *
  * @author malcholm
@@ -40,12 +42,12 @@ import javax.swing.*;
  */
 public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener {
 
-    // grid
+    
     private static final int CELL = 32;
     private static final int ROWS = 15;
     private static final int COLS = 20;
 
-    // game state
+    
     private int playerRow = 1;
     private int playerCol = 1;
     private int health = 5;
@@ -54,26 +56,26 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
     private boolean gameOver = false;
     private boolean gameWon = false;
 
-    // shooting
+    
     private final List<Bullet> bullets = new ArrayList<>();
     private boolean canShoot = false;
     private int itemsCollected = 0;
-    private int facing = KeyEvent.VK_RIGHT; // last direction; used when shooting
+    private int facing = KeyEvent.VK_RIGHT; 
 
-    // items and enemies
+    
     private final Set<Item> items = new HashSet<>();
     private final List<Enemy> enemies = new ArrayList<>();
 
-    // sprites (optional)
+    
     private final Image playerImg;
     private final Image enemyImg;
     private final Image itemImg;
     private final Image bulletImg;
 
-    // timer (use javax.swing.Timer explicitly)
+    
     private final javax.swing.Timer timer;
 
-    // medium maze (0=open, 1=wall)
+    
     private final int[][] maze = {
             {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
             {1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,1},
@@ -98,17 +100,17 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
         setFocusable(true);
         addKeyListener(this);
 
-        // load images (optional)
+        
         playerImg = loadImage("G10_player.png");
         enemyImg = loadImage("G10_enemy.png");
         itemImg = loadImage("G10_item.png");
         bulletImg = loadImage("G10_bullet.png");
 
-        // place items and enemies
+        
         spawnRandomItems(20);
         spawnEnemies();
 
-        // Swing timer (explicit)
+        
         timer = new javax.swing.Timer(100, this);
         timer.start();
     }
@@ -122,7 +124,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
         }
     }
 
-    // spawn items (items store row,col)
+    
     private void spawnRandomItems(int count) {
         Random rnd = new Random();
         while (items.size() < count) {
@@ -136,7 +138,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
 
     private void spawnEnemies() {
         enemies.clear();
-        // place a few enemies at safe open locations
+        
         enemies.add(new Enemy(7, 15));  // row, col
         enemies.add(new Enemy(10, 5));
         enemies.add(new Enemy(12, 13));
@@ -146,7 +148,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // draw grid
+        
         for (int r = 0; r < ROWS; r++) {
             for (int c = 0; c < COLS; c++) {
                 if (maze[r][c] == 1) g.setColor(new Color(60,60,60));
@@ -155,7 +157,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
             }
         }
 
-        // draw items
+        
         for (Item it : items) {
             if (itemImg != null) g.drawImage(itemImg, it.col * CELL + 6, it.row * CELL + 6, CELL - 12, CELL - 12, this);
             else {
@@ -164,14 +166,14 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
             }
         }
 
-        // draw bullets
+        
         g.setColor(Color.CYAN);
         for (Bullet b : bullets) {
             if (bulletImg != null) g.drawImage(bulletImg, b.col * CELL + 10, b.row * CELL + 10, 12, 12, this);
             else g.fillOval(b.col * CELL + 10, b.row * CELL + 10, 12, 12);
         }
 
-        // draw enemies
+        
         for (Enemy en : enemies) {
             if (enemyImg != null) g.drawImage(enemyImg, en.col * CELL, en.row * CELL, CELL, CELL, this);
             else {
@@ -180,14 +182,14 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
             }
         }
 
-        // draw player
+        
         if (playerImg != null) g.drawImage(playerImg, playerCol * CELL, playerRow * CELL, CELL, CELL, this);
         else {
             g.setColor(Color.BLUE);
             g.fillOval(playerCol * CELL + 4, playerRow * CELL + 4, CELL - 8, CELL - 8);
         }
 
-        // HUD
+        
         g.setColor(Color.WHITE);
         g.drawString("Score: " + score, 10, 16);
         g.drawString("HP: " + health, 100, 16);
@@ -213,24 +215,24 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
         }
     }
 
-    // main loop
+    
     @Override
     public void actionPerformed(ActionEvent e) {
         if (paused || gameOver || gameWon) return;
 
-        // enemies act
+        
         for (Enemy en : new ArrayList<>(enemies)) {
             en.actTowards(playerRow, playerCol, maze);
         }
 
-        // bullets update
+        
         updateBullets();
 
-        // collisions & pickups
+        
         checkItemPickup();
         checkEnemyPlayerCollision();
 
-        // win condition: items empty and enemies dead
+        
         if (items.isEmpty() && enemies.isEmpty()) {
             gameWon = true;
             timer.stop();
@@ -244,17 +246,17 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
         while (it.hasNext()) {
             Bullet b = it.next();
 
-            // move
+            
             b.row += b.dRow;
             b.col += b.dCol;
 
-            // out of bounds or hit wall
+            
             if (b.row < 0 || b.row >= ROWS || b.col < 0 || b.col >= COLS || maze[b.row][b.col] == 1) {
                 it.remove();
                 continue;
             }
 
-            // hit enemy?
+            
             Iterator<Enemy> enIt = enemies.iterator();
             boolean removedBullet = false;
             while (enIt.hasNext()) {
@@ -280,7 +282,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
                 score += 5;
                 itemsCollected++;
                 if (itemsCollected >= 10) canShoot = true;
-                if (health < 5) health++; // small heal on pickup
+                if (health < 5) health++; 
             }
         }
     }
@@ -288,10 +290,10 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
     private void checkEnemyPlayerCollision() {
         for (Enemy en : enemies) {
             if (en.row == playerRow && en.col == playerCol) {
-                // damage and knockback attempt
+                
                 health--;
                 score = Math.max(0, score - 1);
-                // simple knockback: try opposite of previous move not tracked -> try random adjacent safe tile
+                
                 for (int[] d : new int[][]{{0,1},{0,-1},{1,0},{-1,0}}) {
                     int nr = playerRow + d[0], nc = playerCol + d[1];
                     if (nr >=0 && nr < ROWS && nc >=0 && nc < COLS && maze[nr][nc] == 0) {
@@ -308,7 +310,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
         }
     }
 
-    // input
+    
     @Override
     public void keyPressed(KeyEvent e) {
         if (gameOver || gameWon) return;
@@ -328,15 +330,15 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
         if (k == KeyEvent.VK_LEFT) { newCol--; facing = KeyEvent.VK_LEFT; }
         if (k == KeyEvent.VK_RIGHT) { newCol++; facing = KeyEvent.VK_RIGHT; }
 
-        // move if open
+        
         if (newRow >= 0 && newRow < ROWS && newCol >= 0 && newCol < COLS && maze[newRow][newCol] == 0) {
             playerRow = newRow;
             playerCol = newCol;
         }
 
-        // shoot
+        
         if (k == KeyEvent.VK_SPACE && canShoot) {
-            // bullet spawns in front of player
+            
             int dr = 0, dc = 0;
             if (facing == KeyEvent.VK_UP) dr = -1;
             if (facing == KeyEvent.VK_DOWN) dr = 1;
@@ -353,13 +355,13 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
 
-    // ------------------ small supporting classes --------------------
+    
 
     private static class Item {
         int row, col;
         Item(int row, int col) { this.row = row; this.col = col; }
 
-        // equality & hash so Set works
+        
         @Override public boolean equals(Object o) {
             if (!(o instanceof Item)) return false;
             Item i = (Item)o;
@@ -380,7 +382,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
 
         Enemy(int row, int col) { this.row = row; this.col = col; }
 
-        // act: sometimes attempt to move toward the player, sometimes random
+        
         void actTowards(int prow, int pcol, int[][] maze) {
             // 60% chance try to move toward player, 40% random/no-op
             if (rnd.nextDouble() < 0.4) return;
@@ -388,7 +390,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
             int dr = Integer.compare(prow, row);
             int dc = Integer.compare(pcol, col);
 
-            // try horizontal then vertical, then diagonals, then random neighbor
+            
             int[][] tries = {
                     {row + dr, col},
                     {row, col + dc},
@@ -407,7 +409,7 @@ public class G10_Room1_PD4 extends JPanel implements ActionListener, KeyListener
         }
     }
 
-    // ------------------ main --------------------
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("Maze Game - Medium (Clean)");
