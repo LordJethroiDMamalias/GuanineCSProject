@@ -9,7 +9,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 
-//groupmates: GN JUMALON, FEDORA MAYNOPAS
+//groupmates: GN JUMALON, FEDORA MAYNOPAS & EDWARD MALVAS
 
 class Entity {
     protected int x, y;
