@@ -49,19 +49,19 @@ public class G8_Room1_PD4 implements KeyListener {
             hasBomb = new boolean[mapWidth * mapHeight];
             
             // Safe Image Loading
-            grass1 = loadIcon("Images/grass1.png", tileSizeW, tileSizeH);
-            grassRed = loadIcon("Images/grass1red.png", tileSizeW, tileSizeH);
-            bombIcon = loadIcon("Images/bomb.png", tileSizeW, tileSizeH);
-            Fence = loadIcon("Images/TFence.png", tileSizeW, tileSizeH);
-            TRFence = loadIcon("Images/TRFence.png", tileSizeW, tileSizeH);
-            TLFence = loadIcon("Images/TLFence.png", tileSizeW, tileSizeH);
-            SFence = loadIcon("Images/SFence.png", tileSizeW, tileSizeH);
-            BRFence = loadIcon("Images/BRFence.png", tileSizeW, tileSizeH);
-            BLFence = loadIcon("Images/BLFence.png", tileSizeW, tileSizeH);
-            pDown1 = loadIcon("Images/down1.png", tileSizeW, tileSizeH);
-            pUp1 = loadIcon("Images/up1.png", tileSizeW, tileSizeH);
-            pLeft1 = loadIcon("Images/left1.png", tileSizeW, tileSizeH);
-            pRight1 = loadIcon("Images/right1.png", tileSizeW, tileSizeH);
+            grass1 = loadIcon("images/G8_grass1.png", tileSizeW, tileSizeH);
+            grassRed = loadIcon("images/G8_grass1red.png", tileSizeW, tileSizeH);
+            bombIcon = loadIcon("images/G8_bomb.png", tileSizeW, tileSizeH);
+            Fence = loadIcon("images/G8_TFence.png", tileSizeW, tileSizeH);
+            TRFence = loadIcon("images/G8_TRFence.png", tileSizeW, tileSizeH);
+            TLFence = loadIcon("images/G8_TLFence.png", tileSizeW, tileSizeH);
+            SFence = loadIcon("images/G8_SFence.png", tileSizeW, tileSizeH);
+            BRFence = loadIcon("images/G8_BRFence.png", tileSizeW, tileSizeH);
+            BLFence = loadIcon("images/G8_BLFence.png", tileSizeW, tileSizeH);
+            pDown1 = loadIcon("images/G8_down1.png", tileSizeW, tileSizeH);
+            pUp1 = loadIcon("images/G8_up1.png", tileSizeW, tileSizeH);
+            pLeft1 = loadIcon("images/G8_left1.png", tileSizeW, tileSizeH);
+            pRight1 = loadIcon("images/G8_right1.png", tileSizeW, tileSizeH);
 
             setupMap();
             startBombLogic();
