@@ -225,7 +225,7 @@ public class NewMain extends JPanel implements ActionListener, KeyListener, Mous
         g.setColor(questStarted ? Color.YELLOW : Color.WHITE);
         g.drawString(currentObjective, 35, 58);
 
-        // Status Message with Exception/Error handling visuals
+       
         if (System.currentTimeMillis() - statusTimer < 3000 && !statusMessage.isEmpty()) {
             g.setColor(new Color(20, 0, 0, 230));
             g.fillRect(200, 520, 400, 40);
@@ -296,7 +296,7 @@ public class NewMain extends JPanel implements ActionListener, KeyListener, Mous
                 }
             }
             if (!clickedSomething && questStarted) {
-                // Example of handling an "Invalid menu choice" or area click
+             
                 throw new IllegalArgumentException("Invalid click area.");
             }
         } catch (IllegalArgumentException ex) {
@@ -334,7 +334,7 @@ public class NewMain extends JPanel implements ActionListener, KeyListener, Mous
             } else if (isMovementKey(key)) {
                 handleMovement(key, true);
             } else {
-                // Catching invalid keyboard keys for movement/interaction
+               
                 throw new KeyException("Invalid input. Use WASD or E.");
             }
         } catch (UnsupportedOperationException ex) {
@@ -388,9 +388,7 @@ public class NewMain extends JPanel implements ActionListener, KeyListener, Mous
                 activeQuestItem = null;
             } else {
                 char c = e.getKeyChar();
-                // Handling "Entering letters instead of numbers" logic: 
-                // Since reaction names are letters, we check for non-valid chemical naming characters
-                if (Character.isLetter(c) || c == '-') {
+                 if (Character.isLetter(c) || c == '-') {
                     currentInput += Character.toLowerCase(c);
                 } else if (Character.isDigit(c)) {
                     throw new NumberFormatException("Reaction types do not contain numbers.");
@@ -431,7 +429,7 @@ public class NewMain extends JPanel implements ActionListener, KeyListener, Mous
     @Override public void mouseEntered(MouseEvent e) {}
     @Override public void mouseExited(MouseEvent e) {}
 
-    // Custom internal exception for Key logic
+
     class KeyException extends Exception {
         public KeyException(String msg) { super(msg); }
     }
