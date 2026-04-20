@@ -179,7 +179,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener 
         currentObjective = "Quest Complete!";
         repaint();
         
-        // Close only this window
+      
         javax.swing.SwingUtilities.getWindowAncestor(this).dispose();
     }
     repaint();
