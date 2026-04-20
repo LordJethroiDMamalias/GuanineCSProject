@@ -12,7 +12,7 @@ public class G3_EndScene extends JPanel implements KeyListener {
     private Image characterImg, chemicalImg;
     private int step = 0;
     
-    // Your requested dialogue lines
+    
     private String[] dialogue = {
         "thank you so much!",
         "You can tell that these tasks were left from my dear friend Night...",
@@ -45,15 +45,15 @@ public class G3_EndScene extends JPanel implements KeyListener {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         if (step < dialogue.length) {
-            // Scene 1: Character taking over the screen
+            
             g.drawImage(characterImg, 0, 0, getWidth(), getHeight(), null);
             drawDialogueBox(g, dialogue[step]);
         } else if (step == dialogue.length) {
-            // Scene 2: Chemical taking over the screen
+            
             g.drawImage(chemicalImg, 0, 0, getWidth(), getHeight(), null);
             drawDialogueBox(g, "Obtained!");
         } else {
-            // Scene 3: Final Black Screen
+           
             g.setColor(Color.BLACK);
             g.fillRect(0, 0, getWidth(), getHeight());
             g.setColor(Color.WHITE);
@@ -61,7 +61,7 @@ public class G3_EndScene extends JPanel implements KeyListener {
             
             String finalMsg = "After drinking the potion, you are suddenly more fast than usuall. Not just your physical body, but your thoughts too!";
             
-            // Basic text wrapping for the long message
+            
             FontMetrics fm = g.getFontMetrics();
             int x = 100;
             int y = getHeight() / 2;
@@ -86,7 +86,7 @@ public class G3_EndScene extends JPanel implements KeyListener {
         if (e.getKeyCode() == KeyEvent.VK_E) {
             step++;
             if (step > dialogue.length + 1) {
-                // Closes the window when the text is finished
+                
                 javax.swing.JFrame topFrame = (javax.swing.JFrame) javax.swing.SwingUtilities.getWindowAncestor(this);
                 topFrame.dispose();
             }
@@ -94,7 +94,7 @@ public class G3_EndScene extends JPanel implements KeyListener {
         }
     }
 
-    // Required by KeyListener interface
+
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
 }
