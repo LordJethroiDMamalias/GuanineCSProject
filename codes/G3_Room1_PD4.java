@@ -228,7 +228,7 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
         g.setColor(questStarted ? Color.YELLOW : Color.WHITE);
         g.drawString(currentObjective, 35, 58);
 
-        // Status Message with Exception/Error handling visuals
+        
         if (System.currentTimeMillis() - statusTimer < 3000 && !statusMessage.isEmpty()) {
             g.setColor(new Color(20, 0, 0, 230));
             g.fillRect(200, 520, 400, 40);
@@ -391,8 +391,7 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
                 activeQuestItem = null;
             } else {
                 char c = e.getKeyChar();
-                // Handling "Entering letters instead of numbers" logic: 
-                // Since reaction names are letters, we check for non-valid chemical naming characters
+                
                 if (Character.isLetter(c) || c == '-') {
                     currentInput += Character.toLowerCase(c);
                 } else if (Character.isDigit(c)) {
@@ -434,7 +433,7 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
     @Override public void mouseEntered(MouseEvent e) {}
     @Override public void mouseExited(MouseEvent e) {}
 
-    // Custom internal exception for Key logic
+
     class KeyException extends Exception {
         public KeyException(String msg) { super(msg); }
     }
