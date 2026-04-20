@@ -14,16 +14,15 @@ public class G3_MapImplementer {
     public static void main(String[] args) {
         System.out.println("--- Booting Chemistry Quest System ---");
 
-        // 1. NOW LOADING NewMain FIRST
+        
         System.out.println("Status: Loading Map 2 (NewMain)...");
         runLevel(new G3_Room1_PD4(), "Chemistry Quest: The Shattered Nite - Map 2");
 
-        // 2. NOW LOADING Main SECOND
+
         System.out.println("\n--- Transitioning to Map 1 --- \n");
         System.out.println("Status: Loading Map 1 (Main)...");
         runLevel(new G3_Room2_PD6(), "Chemistry Quest - Map 1");
 
-        // 3. Final Epilogue remains last
         System.out.println("\n--- Loading Final Scene --- \n");
         runLevel(new G3_EndScene(), "Epilogue: The Lawyer's Freedom");
 
@@ -38,7 +37,7 @@ public class G3_MapImplementer {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        // This ensures the next map doesn't open until this one is closed
+     
         while (frame.isVisible()) {
             try {
                 Thread.sleep(100);
