@@ -2,11 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class G7_Room2_PD6 extends JPanel implements KeyListener, ActionListener {
+public class G7_Room1_PD4 extends JPanel implements KeyListener {
 
     final int TILE = 40;
 
-    Image playerImg, wallImg, npcImg, enemyImg, floorImg;
+    Image G7_player, G7_wall, G7_npc, G7_enemy, G7_floor;
 
     String[] maze = {
             "111111111111",
@@ -21,190 +21,206 @@ public class G7_Room2_PD6 extends JPanel implements KeyListener, ActionListener 
     int rows = maze.length;
     int cols = maze[0].length();
 
-    Player player;
-    Enemy enemy;
+    int playerRow = 1;
+    int playerCol = 1;
 
-    boolean up, down, left, right;
     boolean talkedToNPC = false;
     boolean gameFinished = false;
-    boolean gameWon = false;
 
-    Timer timer;
+    int playerHP = 100;
+    int bossHP = 100;
 
-    public G7_Room2_PD6() {
-
-        setPreferredSize(new Dimension(cols * TILE, rows * TILE));
+    public G7_Room1_PD4() {
+        setPreferredSize(new Dimension(cols * TILE, rows * TILE + 70));
         setFocusable(true);
         addKeyListener(this);
 
-        playerImg = new ImageIcon(getClass().getResource("/assets/player.png")).getImage();
-        wallImg   = new ImageIcon(getClass().getResource("/assets/wall.png")).getImage();
-        npcImg    = new ImageIcon(getClass().getResource("/assets/npc.png")).getImage();
-        enemyImg  = new ImageIcon(getClass().getResource("/assets/enemy.png")).getImage();
-        floorImg  = new ImageIcon(getClass().getResource("/assets/floor.png")).getImage();
-
-        player = new Player(TILE, TILE, TILE, playerImg, 4);
-        enemy = new Enemy(10 * TILE, 1 * TILE, TILE, enemyImg, 0);
-
-        timer = new Timer(16, this);
-        timer.start();
+        // SPRITES (RENAMED VARIABLES)
+        G7_player = new ImageIcon(getClass().getResource("/assets/player.png")).getImage();
+        G7_wall   = new ImageIcon(getClass().getResource("/assets/wall.png")).getImage();
+        G7_npc    = new ImageIcon(getClass().getResource("/assets/npc.png")).getImage();
+        G7_enemy  = new ImageIcon(getClass().getResource("/assets/enemy.png")).getImage();
+        G7_floor  = new ImageIcon(getClass().getResource("/assets/floor.png")).getImage();
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
+    public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        // MAZE
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
 
                 char tile = maze[r].charAt(c);
 
                 if (tile == '1') {
-                    g.drawImage(wallImg, c * TILE, r * TILE, TILE, TILE, null);
+                    g.drawImage(G7_wall, c * TILE, r * TILE, TILE, TILE, null);
                 } else {
-                    g.drawImage(floorImg, c * TILE, r * TILE, TILE, TILE, null);
+                    g.drawImage(G7_floor, c * TILE, r * TILE, TILE, TILE, null);
                 }
 
                 if (tile == 'N') {
-                    g.drawImage(npcImg, c * TILE, r * TILE, TILE, TILE, null);
+                    g.drawImage(G7_npc, c * TILE, r * TILE, TILE, TILE, null);
                 }
 
                 if (tile == 'E') {
-                    enemy.draw(g);
+                    g.drawImage(G7_enemy, c * TILE, r * TILE, TILE, TILE, null);
                 }
             }
         }
 
-        player.draw(g);
+        // PLAYER
+        g.drawImage(G7_player, playerCol * TILE, playerRow * TILE, TILE, TILE, null);
 
-        if (gameWon) {
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, 40));
-            g.drawString("YOU WIN!", 120, 150);
-        }
+        // PLAYER HP BAR
+        g.setColor(Color.RED);
+        g.fillRect(20, rows * TILE + 10, 200, 20);
+
+        g.setColor(Color.GREEN);
+        g.fillRect(20, rows * TILE + 10, Math.max(0, playerHP * 2), 20);
+
+        g.setColor(Color.BLACK);
+        g.drawRect(20, rows * TILE + 10, 200, 20);
+        g.drawString("Player HP: " + playerHP, 20, rows * TILE + 45);
+
+        // BOSS HP BAR
+        g.setColor(Color.RED);
+        g.fillRect(260, rows * TILE + 10, 200, 20);
+
+        g.setColor(Color.GREEN);
+        g.fillRect(260, rows * TILE + 10, Math.max(0, bossHP * 2), 20);
+
+        g.setColor(Color.BLACK);
+        g.drawRect(260, rows * TILE + 10, 200, 20);
+        g.drawString("RYAN HP: " + bossHP, 260, rows * TILE + 45);
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (!gameFinished) movePlayer();
+    void movePlayer(int dr, int dc) {
+        int newRow = playerRow + dr;
+        int newCol = playerCol + dc;
+
+        char destination = maze[newRow].charAt(newCol);
+
+        if (destination == '1') return;
+
+        playerRow = newRow;
+        playerCol = newCol;
+
+        // NPC BOOST
+        if (destination == 'N' && !talkedToNPC) {
+            talkedToNPC = true;
+            playerHP += 30;
+
+            JOptionPane.showMessageDialog(this,
+                    "NPC: RYAN is dangerous...\n" +
+                    "Take this blessing (+30 HP)\n" +
+                    "Your HP: " + playerHP);
+
+            repaint();
+        }
+
+        // ENEMY
+        if (destination == 'E' && !gameFinished) {
+            startBattle();
+        }
+
         repaint();
     }
 
-    void movePlayer() {
-
-        int currentX = player.getX();
-        int currentY = player.getY();
-
-        if (up) {
-            int newY = currentY - 4;
-            if (!isWall(currentX, newY))
-                player.setPosition(currentX, newY);
-        }
-
-        if (down) {
-            int newY = currentY + 4;
-            if (!isWall(currentX, newY))
-                player.setPosition(currentX, newY);
-        }
-
-        if (left) {
-            int newX = currentX - 4;
-            if (!isWall(newX, currentY))
-                player.setPosition(newX, currentY);
-        }
-
-        if (right) {
-            int newX = currentX + 4;
-            if (!isWall(newX, currentY))
-                player.setPosition(newX, currentY);
-        }
-
-        checkInteraction();
-    }
-
-    boolean isWall(int x, int y) {
-
-        int leftCol = x / TILE;
-        int rightCol = (x + TILE - 1) / TILE;
-        int topRow = y / TILE;
-        int bottomRow = (y + TILE - 1) / TILE;
-
-        return maze[topRow].charAt(leftCol) == '1' ||
-               maze[topRow].charAt(rightCol) == '1' ||
-               maze[bottomRow].charAt(leftCol) == '1' ||
-               maze[bottomRow].charAt(rightCol) == '1';
-    }
-
-    void checkInteraction() {
-
-        int col = player.getX() / TILE;
-        int row = player.getY() / TILE;
-        char tile = maze[row].charAt(col);
-
-        if (tile == 'N' && !talkedToNPC) {
-            talkedToNPC = true;
-            JOptionPane.showMessageDialog(this,
-                    "NPC: Defeat the Tree Monster to escape!");
-        }
-
-        if (tile == 'E' && !gameFinished) {
-            startBattle();
-        }
-    }
-
     void startBattle() {
+        bossHP = 100;
 
-        try {
-            String q1 = JOptionPane.showInputDialog(this, "5 + 3?");
-            if (q1 == null || !q1.trim().equals("8")) {
-                fail("Wrong answer to Q1");
-                return;
+        JOptionPane.showMessageDialog(this,
+                "😈 RYAN Appears!\nBattle Start!");
+
+        while (playerHP > 0 && bossHP > 0) {
+
+            String q = JOptionPane.showInputDialog(this,
+                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
+                    "\n\nRYAN:\nFind the MEAN of 2, 4, 6");
+
+            if ("4".equals(q)) {
+                bossHP -= 30;
+                playerHP += 10;
+                JOptionPane.showMessageDialog(this, "Correct! 30 dmg +10 HP!");
+            } else {
+                playerHP -= 40;
+                JOptionPane.showMessageDialog(this, "Wrong! RYAN hits you (-40 HP)");
             }
 
-            String q2 = JOptionPane.showInputDialog(this, "Capital of France?");
-            if (q2 == null || !q2.trim().equalsIgnoreCase("Paris")) {
-                fail("Wrong answer to Q2");
-                return;
+            repaint(); pause();
+            if (bossHP <= 0 || playerHP <= 0) break;
+
+            q = JOptionPane.showInputDialog(this,
+                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
+                    "\n\nRYAN:\nFind the MEDIAN of 3, 7, 9");
+
+            if ("7".equals(q)) {
+                bossHP -= 30;
+                playerHP += 10;
+                JOptionPane.showMessageDialog(this, "Correct! 30 dmg +10 HP!");
+            } else {
+                playerHP -= 40;
+                JOptionPane.showMessageDialog(this, "Wrong! RYAN hits you (-40 HP)");
             }
 
-            String q3 = JOptionPane.showInputDialog(this, "Java keyword for inheritance?");
-            if (q3 == null || !q3.trim().equalsIgnoreCase("extends")) {
-                fail("Wrong answer to Q3");
-                return;
+            repaint(); pause();
+            if (bossHP <= 0 || playerHP <= 0) break;
+
+            q = JOptionPane.showInputDialog(this,
+                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
+                    "\n\nRYAN:\nFind the MODE of 1, 2, 2, 3");
+
+            if ("2".equals(q)) {
+                bossHP -= 30;
+                playerHP += 10;
+                JOptionPane.showMessageDialog(this, "Correct! 30 dmg +10 HP!");
+            } else {
+                playerHP -= 40;
+                JOptionPane.showMessageDialog(this, "Wrong! RYAN hits you (-40 HP)");
             }
 
-            gameFinished = true;
-            gameWon = true;
+            repaint(); pause();
+        }
 
-        } catch (Exception e) {
+        if (playerHP <= 0) {
             JOptionPane.showMessageDialog(this,
-                    "Invalid input. Please enter valid answers.");
+                    "💀 You were defeated by RYAN...\nGame Over.");
+            System.exit(0);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "🎉 You defeated RYAN!\nYou got the money 💰");
+            gameFinished = true;
         }
     }
 
-    void fail(String message) {
-        JOptionPane.showMessageDialog(this, "Game Over!\n" + message);
-        System.exit(0);
+    void pause() {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-
-        int key = e.getKeyCode();
-
-        if (key == KeyEvent.VK_UP) up = true;
-        else if (key == KeyEvent.VK_DOWN) down = true;
-        else if (key == KeyEvent.VK_LEFT) left = true;
-        else if (key == KeyEvent.VK_RIGHT) right = true;
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_UP -> movePlayer(-1, 0);
+            case KeyEvent.VK_DOWN -> movePlayer(1, 0);
+            case KeyEvent.VK_LEFT -> movePlayer(0, -1);
+            case KeyEvent.VK_RIGHT -> movePlayer(0, 1);
+        }
     }
 
-    @Override
-    public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_UP) up = false;
-        if (e.getKeyCode() == KeyEvent.VK_DOWN) down = false;
-        if (e.getKeyCode() == KeyEvent.VK_LEFT) left = false;
-        if (e.getKeyCode() == KeyEvent.VK_RIGHT) right = false;
-    }
-
+    @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Maze RPG: RYAN Boss Fight");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(new G7_Room1_PD4());
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
 }
