@@ -293,7 +293,7 @@ public class G2_Room2_PD6 implements KeyListener {
                                 // Fires the moment dialogue closes
                                 battle.start(frame,
                                         "images/G2_LivingRoomMap.png",
-                                        "IVy");
+                                        "Rainity");
                                 waitForBattleEnd(() -> {
                                     if (!SaveSystem.isDefeated("Rainity")) {
                                         SaveSystem.markDefeated("Rainity");
