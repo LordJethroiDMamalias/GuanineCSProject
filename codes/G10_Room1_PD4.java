@@ -18,8 +18,8 @@ public class BossRoom extends JPanel implements KeyListener {
     final int TILE_W = WIDTH / COLS;
     final int TILE_H = HEIGHT / ROWS;
 
-    int gridX = 5;
-    int gridY = 9;
+    int gridX = 8;
+    int gridY = 10;
 
     BufferedImage mapImg;
     BufferedImage playerUp, playerDown, playerLeft, playerRight;
