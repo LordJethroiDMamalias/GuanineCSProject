@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class G7_Room1_PD4 extends JPanel implements KeyListener {
+public class G7_Room2_PD4 extends JPanel implements KeyListener {
 
     final int TILE = 40;
 
