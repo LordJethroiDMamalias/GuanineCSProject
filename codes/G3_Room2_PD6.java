@@ -47,6 +47,13 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener 
 
     Player player = new Player(350, 250, 4);
 
+    
+    FedoraPool fedoraPool = new FedoraPool();
+    boolean inBossBattle = false;
+    ChallengeDialog.Question currentBossQuestion = null;
+    
+    Battle battle = new Battle();
+    
     boolean debug = false; 
     boolean up, down, left, right;
 
@@ -341,28 +348,55 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener 
     }
 
     private void drawQuizBox(Graphics g) {
-        int bw = 540, bh = 240;
-        int bx = (getWidth() - bw) / 2, by = (getHeight() - bh) / 2;
-        g.setColor(new Color(20, 20, 40, 250));
-        g.fillRect(bx, by, bw, bh);
-        g.setColor(Color.CYAN);
-        g.drawRect(bx, by, bw, bh);
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("Question:", bx + 40, by + 40);
-        g.setFont(new Font("Monospaced", Font.BOLD, 26));
-        g.setColor(Color.YELLOW);
-        g.drawString(activeQuestItem.equation, bx + 40, by + 85);
-        g.setFont(new Font("Arial", Font.PLAIN, 15));
-        g.setColor(Color.WHITE);
-        g.drawString(finalBossTriggered ? "Write the products (e.g. NaCl+H2O)" : "Enter coefficients separated by commas (e.g. 1,2,1)", bx + 40, by + 120);
-        g.setColor(Color.ORANGE);
-        g.setFont(new Font("Arial", Font.ITALIC, 14));
-        g.drawString("Enter to submit, Escape to exit.", bx + 40, by + 145);
-        g.drawString("You are stuck here until you balance the equation!", bx + 40, by + 165);
-        g.setFont(new Font("Arial", Font.BOLD, 24));
-        g.setColor(Color.GREEN);
-        g.drawString("Answer: " + currentInput + "|", bx + 40, by + 210);
+       int bw = 540, bh = 240;
+    int bx = (getWidth() - bw) / 2, by = (getHeight() - bh) / 2;
+    
+    // Background and Border
+    g.setColor(new Color(20, 20, 40, 250));
+    g.fillRect(bx, by, bw, bh);
+    g.setColor(Color.CYAN);
+    g.drawRect(bx, by, bw, bh);
+    
+    // Header
+    g.setColor(Color.WHITE);
+    g.setFont(new Font("Arial", Font.BOLD, 20));
+    g.drawString("Question:", bx + 40, by + 40);
+    
+    // The Question String (Cleaned of <b> tags)
+    g.setFont(new Font("Monospaced", Font.BOLD, 22)); // Slightly smaller font to fit longer text
+    g.setColor(Color.YELLOW);
+    
+    // This logic removes HTML tags like <b> from the FedoraPool strings
+    String cleanQuestion = activeQuestItem.equation.replaceAll("<[^>]*>", ""); 
+    g.drawString(cleanQuestion, bx + 40, by + 85);
+    
+    // Dynamic Hint Text
+    g.setFont(new Font("Arial", Font.PLAIN, 15));
+    g.setColor(Color.WHITE);
+    
+    String hint;
+    if (inBossBattle) {
+        // If it's the FedoraPool boss battle
+        hint = "Type the whole number mass (amu or g/mol).";
+    } else if (finalBossTriggered) {
+        // If it's the specific ghost reaction quest
+        hint = "Write the products (e.g. NaCl+H2O)";
+    } else {
+        // Standard balancing quest
+        hint = "Enter coefficients separated by commas (e.g. 1,2,1)";
+    }
+    g.drawString(hint, bx + 40, by + 120);
+    
+    // Instructions
+    g.setColor(Color.ORANGE);
+    g.setFont(new Font("Arial", Font.ITALIC, 14));
+    g.drawString("Enter to submit, Escape to exit.", bx + 40, by + 145);
+    g.drawString("You are stuck here until you solve the chemistry!", bx + 40, by + 165);
+    
+    // User Input
+    g.setFont(new Font("Arial", Font.BOLD, 24));
+    g.setColor(Color.GREEN);
+    g.drawString("Answer: " + currentInput + "|", bx + 40, by + 210);
     }
 
     private void setStatus(String msg) {
@@ -383,45 +417,63 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener 
         }
 
         if (activeQuestItem != null) {
-            if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                if (currentInput.equalsIgnoreCase(activeQuestItem.answer)) {
-                    activeQuestItem.solved = true;
-                    activeQuestItem = null;
-                    if (finalBossTriggered) {
-                        dialogueSpeaker = "Ghost2";
-                        dialogueText = "fine.. hmph... *mutters* here you go...";
-                        showDialogue = true;
-                        dialogueStep = 30;
-                    } else {
-                        dialogueSpeaker = "System";
-                        dialogueText = "The nite fades away...";
-                        showDialogue = true;
-                        boolean allDone = true;
-                        for (QuestItem item : items) if (!item.solved) allDone = false;
-                        if (allDone) { allNitesSolved = true; dialogueStep = 10; }
-                    }
-                } else { 
-                    setStatus("Incorrect! Please check your chemistry coefficients.");
-                    currentInput = ""; 
-                }
-            } else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
-                if (currentInput.length() > 0) currentInput = currentInput.substring(0, currentInput.length() - 1);
-            } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                
-                setStatus("You must finish the equation to exit!");
-            } else {
-                char c = e.getKeyChar();
-                
-              
-                if (!finalBossTriggered && Character.isLetter(c)) {
-                    setStatus("Invalid input. Please enter numbers and commas.");
-                } else if (Character.isLetterOrDigit(c) || c == ',' || c == '+') {
-                    currentInput += c;
+    if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+        if (currentInput.equalsIgnoreCase(activeQuestItem.answer)) {
+            activeQuestItem.solved = true;
+            
+            // --- NEW BOSS LOGIC ---
+            if (inBossBattle) {
+                inBossBattle = false; // End the battle state
+                activeQuestItem = null;
+                dialogueSpeaker = "Ghost2";
+                dialogueText = "fine.. hmph... *mutters* here you go...";
+                showDialogue = true;
+                dialogueStep = 30; // This leads to the Nite Splash in advanceDialogue()
+            } 
+            // --- EXISTING NITE LOGIC ---
+            else {
+                activeQuestItem = null;
+                if (finalBossTriggered) {
+                    dialogueSpeaker = "Ghost2";
+                    dialogueText = "fine.. hmph... *mutters* here you go...";
+                    showDialogue = true;
+                    dialogueStep = 30;
+                } else {
+                    dialogueSpeaker = "System";
+                    dialogueText = "The nite fades away...";
+                    showDialogue = true;
+                    boolean allDone = true;
+                    for (QuestItem item : items) if (!item.solved) allDone = false;
+                    if (allDone) { allNitesSolved = true; dialogueStep = 10; }
                 }
             }
-            repaint();
-            return;
+        } else { 
+            // Feedback for failing a FedoraPool question (whole number amu/molar mass)
+            if (inBossBattle) {
+                setStatus("Incorrect mass! Check your periodic table values.");
+            } else {
+                setStatus("Incorrect! Please check your chemistry coefficients.");
+            }
+            currentInput = ""; 
         }
+    } else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+        if (currentInput.length() > 0) currentInput = currentInput.substring(0, currentInput.length() - 1);
+    } else if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+        setStatus("You must finish the equation to exit!");
+    } else {
+        char c = e.getKeyChar();
+        
+        // Allow letters for molar mass units if needed, 
+        // though FedoraPool check is currently numeric.
+        if (!finalBossTriggered && !inBossBattle && Character.isLetter(c)) {
+            setStatus("Invalid input. Please enter numbers and commas.");
+        } else if (Character.isLetterOrDigit(c) || c == ',' || c == '+') {
+            currentInput += c;
+        }
+    }
+    repaint();
+    return;
+}
 
         if (e.getKeyCode() == KeyEvent.VK_E) {
             if (showDialogue) advanceDialogue();
@@ -501,11 +553,22 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener 
             dialogueText = "but first...";
             dialogueStep = 25;
         } else if (dialogueStep == 25) {
-            showDialogue = false;
-            finalBossTriggered = true;
-            activeQuestItem = new QuestItem(0,0, "HCl + NaOH -> ?", "NaCl+H2O");
-            currentInput = "";
-            dialogueStep = 0;
+          showDialogue = false;
+    finalBossTriggered = true;
+    
+    // 1. Get the parent window
+    JFrame parentFrame = (JFrame) javax.swing.SwingUtilities.getWindowAncestor(this);
+    
+    // 2. Start the battle using the other group's code
+    battle.start(parentFrame, "/ASSETS/G3_background.png", "Fedora Group");
+
+    // 3. Use the "Poller" to wait for the win
+    waitForBattleEnd(() -> {
+        // This is where your previous logic goes!
+        inBossBattle = false; 
+        dialogueStep = 30; // Move to victory dialogue
+        advanceDialogue();
+    });
         } 
         else if (dialogueStep == 30) {
             showDialogue = false;
@@ -539,4 +602,25 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener 
             JOptionPane.showMessageDialog(null, "The game failed to start properly.", "Launch Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+    
+    // Paste this at the bottom of your G3_Room2_PD6 class
+private void waitForBattleEnd(Runnable onEnd) {
+    // This timer checks every 200ms if the battle has finished
+    javax.swing.Timer poller = new javax.swing.Timer(200, null);
+    poller.addActionListener(ev -> {
+        // Once the battle "paused" state is false, the fight is over
+        if (!Battle.paused) {          
+            poller.stop();
+            onEnd.run(); // This triggers your "Victory" dialogue
+        }
+    });
+    poller.start();
 }
+    
+}
+
+
+
+
+
+
