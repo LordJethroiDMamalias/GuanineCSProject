@@ -14,7 +14,7 @@ public class G3_EndScene extends JPanel implements KeyListener {
     
     
     private String[] dialogue = {
-        "thank you so much!",
+        "*takes both of the nites from you*",
         "You can tell that these tasks were left from my dear friend Night...",
         "She really does love Chemistry and some Math...",
         "Since you both got the 2 Nites... I'm no longer a ghost!",
