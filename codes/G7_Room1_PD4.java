@@ -27,8 +27,11 @@ public class G7_Room1_PD4 extends JPanel implements KeyListener {
     boolean talkedToNPC = false;
     boolean gameFinished = false;
 
+    int playerHP = 100;
+    int bossHP = 100;
+
     public G7_Room1_PD4() {
-        setPreferredSize(new Dimension(cols * TILE, rows * TILE));
+        setPreferredSize(new Dimension(cols * TILE, rows * TILE + 70));
         setFocusable(true);
         addKeyListener(this);
 
@@ -65,6 +68,26 @@ public class G7_Room1_PD4 extends JPanel implements KeyListener {
         }
 
         g.drawImage(playerImg, playerCol * TILE, playerRow * TILE, TILE, TILE, null);
+
+        g.setColor(Color.RED);
+        g.fillRect(20, rows * TILE + 10, 200, 20);
+
+        g.setColor(Color.GREEN);
+        g.fillRect(20, rows * TILE + 10, Math.max(0, playerHP * 2), 20);
+
+        g.setColor(Color.BLACK);
+        g.drawRect(20, rows * TILE + 10, 200, 20);
+        g.drawString("Player HP: " + playerHP, 20, rows * TILE + 45);
+
+        g.setColor(Color.RED);
+        g.fillRect(260, rows * TILE + 10, 200, 20);
+
+        g.setColor(Color.GREEN);
+        g.fillRect(260, rows * TILE + 10, Math.max(0, bossHP * 2), 20);
+
+        g.setColor(Color.BLACK);
+        g.drawRect(260, rows * TILE + 10, 200, 20);
+        g.drawString("RYAN HP: " + bossHP, 260, rows * TILE + 45);
     }
 
     void movePlayer(int dr, int dc) {
@@ -80,36 +103,108 @@ public class G7_Room1_PD4 extends JPanel implements KeyListener {
 
         if (destination == 'N' && !talkedToNPC) {
             talkedToNPC = true;
+            playerHP += 30;
+
             JOptionPane.showMessageDialog(this,
-                    "NPC: Beware of the tree monster ahead...\nAnswer wisely if you want the money.");
+                    "NPC: RYAN is dangerous...\n" +
+                    "Take this blessing (+30 HP)\n" +
+                    "Your HP: " + playerHP);
+
+            repaint();
         }
 
         if (destination == 'E' && !gameFinished) {
-            startGamble();
+            startBattle();
         }
 
         repaint();
     }
 
-    void startGamble() {
-        String q1 = JOptionPane.showInputDialog(this, "Tree Monster:\nWhat is 5 + 3?");
-        if (!"8".equals(q1)) fail();
+    void startBattle() {
+        bossHP = 100;
 
-        String q2 = JOptionPane.showInputDialog(this, "Tree Monster:\nWhat is the capital of France?");
-        if (!"Paris".equalsIgnoreCase(q2)) fail();
-
-        String q3 = JOptionPane.showInputDialog(this, "Tree Monster:\nJava keyword to inherit a class?");
-        if (!"extends".equalsIgnoreCase(q3)) fail();
-
-        gameFinished = true;
         JOptionPane.showMessageDialog(this,
-                "You won the gamble!\nYou received the money 💰");
+                "😈 RYAN Appears!\nBattle Start!");
+
+        while (playerHP > 0 && bossHP > 0) {
+
+            String q = JOptionPane.showInputDialog(this,
+                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
+                    "\n\nRYAN:\nFind the MEAN of 2, 4, 6");
+
+            if ("4".equals(q)) {
+                bossHP -= 30;
+                playerHP += 10;
+
+                JOptionPane.showMessageDialog(this,
+                        "Correct!\nYou dealt 30 damage!\n+10 HP!");
+            } else {
+                playerHP -= 40;
+
+                JOptionPane.showMessageDialog(this,
+                        "Wrong!\nRYAN strikes you hard! (-40 HP)");
+            }
+
+            repaint(); pause();
+            if (bossHP <= 0 || playerHP <= 0) break;
+
+            q = JOptionPane.showInputDialog(this,
+                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
+                    "\n\nRYAN:\nFind the MEDIAN of 3, 7, 9");
+
+            if ("7".equals(q)) {
+                bossHP -= 30;
+                playerHP += 10;
+
+                JOptionPane.showMessageDialog(this,
+                        "Correct!\nYou dealt 30 damage!\n+10 HP!");
+            } else {
+                playerHP -= 40;
+
+                JOptionPane.showMessageDialog(this,
+                        "Wrong!\nRYAN strikes you hard! (-40 HP)");
+            }
+
+            repaint(); pause();
+            if (bossHP <= 0 || playerHP <= 0) break;
+
+            q = JOptionPane.showInputDialog(this,
+                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
+                    "\n\nRYAN:\nFind the MODE of 1, 2, 2, 3");
+
+            if ("2".equals(q)) {
+                bossHP -= 30;
+                playerHP += 10;
+
+                JOptionPane.showMessageDialog(this,
+                        "Correct!\nYou dealt 30 damage!\n+10 HP!");
+            } else {
+                playerHP -= 40;
+
+                JOptionPane.showMessageDialog(this,
+                        "Wrong!\nRYAN strikes you hard! (-40 HP)");
+            }
+
+            repaint(); pause();
+        }
+
+        if (playerHP <= 0) {
+            JOptionPane.showMessageDialog(this,
+                    "💀 You were defeated by RYAN...\nGame Over.");
+            System.exit(0);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "🎉 You defeated RYAN!\nYou got the money 💰");
+            gameFinished = true;
+        }
     }
 
-    void fail() {
-        JOptionPane.showMessageDialog(this,
-                "Wrong answer!\nThe monster keeps the money.");
-        System.exit(0);
+    void pause() {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -126,7 +221,7 @@ public class G7_Room1_PD4 extends JPanel implements KeyListener {
     @Override public void keyTyped(KeyEvent e) {}
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Maze Gamble Game");
+        JFrame frame = new JFrame("Maze RPG: RYAN Boss Fight");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(new G7_Room1_PD4());
         frame.pack();
