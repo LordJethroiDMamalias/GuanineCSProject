@@ -87,7 +87,7 @@ public class minibossroom extends JPanel implements KeyListener {
         playerDown  = load("G10_pFront.png");
         playerLeft  = load("G10_pLeft.png");
         playerRight = load("G10_pRight.png");
-        bossImg     = load("Don Malek.png");
+        bossImg     = load("G10_Don Malek.png");
 
         currentPlayer = playerDown;
         generateCollision();
@@ -104,7 +104,7 @@ public class minibossroom extends JPanel implements KeyListener {
     // Asset loading
     // =========================================================================
     BufferedImage load(String name) {
-        try   { return ImageIO.read(new File("src/assets/" + name)); }
+        try   { return ImageIO.read(new File("src/images/" + name)); }
         catch (Exception e) { System.out.println("Could not load: " + name); return null; }
     }
 
