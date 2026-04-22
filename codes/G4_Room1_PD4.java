@@ -29,9 +29,11 @@ public class G4_Room1_PD4 implements KeyListener {
     int frameWidth = 660;
     int frameHeight = 660;
     int characterPosition;
-    int NPCLocation = -1, machineLocation = -1, rocketLocation = -1; 
+    int NPCLocation = -1, machineLocation = -1, rocketLocation = -1;
+    int objective = 0;
     boolean yesTrigger = false;
     boolean doneTrigger = false;
+    //boolean battleTrigger = false;
 
     Dialog dialog = new Dialog();
 
@@ -64,7 +66,7 @@ public class G4_Room1_PD4 implements KeyListener {
             0, 6, 1, 1, 1, 3, 1, 1, 1, 0, 0,
             0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,
-            0, 5, 4, 5, 0, 1, 1, 1, 1, 0, 0,
+            0, 5, 4, 5, 0, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
             2, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -93,6 +95,33 @@ public class G4_Room1_PD4 implements KeyListener {
                 default -> new JLabel(tile);
             };
         }
+        loadSaveData();
+    }
+    
+        // =========================================================================
+    // Save integration — load
+    // =========================================================================
+    private void loadSaveData() {
+        SaveSystem.SaveData save = SaveSystem.loadGame("G4_Room1_PD4");
+
+        SaveSystem.startTimer(save.timeSeconds);
+
+        doneTrigger = save.hasFlag("objective_rocket");
+
+        // Recalculate collected count from flags (single source of truth)
+        objective = 0;
+        if (doneTrigger) objective++;
+    }
+
+    // =========================================================================
+    // Save integration — save
+    // =========================================================================
+    private void saveProgress() {
+        SaveSystem.saveGame(
+            new SaveSystem.SaveData.Builder("G4_Room1_PD4")
+                .flag(doneTrigger ? "objective_rocket" : null)
+                .battles(SaveSystem.getDefeatedBosses())   // always up-to-date list
+        );
     }
 
     private ImageIcon scale(String path, int w, int h) {
@@ -145,7 +174,7 @@ public class G4_Room1_PD4 implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (dialog.isVisible()) return;
+        if (dialog.isVisible() || Battle.paused) return;
 
         int move = 0;
         switch (e.getKeyCode()) {
@@ -213,8 +242,10 @@ public class G4_Room1_PD4 implements KeyListener {
                         String[] lines = {"LALALALALALALALALAL LAL ALA LAL AL LALALA.","I LOVE GAMES. AND GAMES LOVE ME..!","HEY. YOU. STOP POKING ON MY SHINGLES","WHAT'S THAT? YOU WANT TO GET PAST ME?","OKAY BUT YOU NEED TO DO SOMETHING FOR ME FIRST..","I WANT TO PLAY WITH MY ROCKET BUT IT'S BROKEN","FIX MY ROCKET? >~<? sorry"};
                         String[] options = {"Okay", "Just because of that, no"};
                         Runnable[] branches = {
-                            () -> { yesTrigger = true; dialog.show(layers, new String[]{"EXEMPLARY","I WANT IT TO MOVE WITH AN ACCELERATION OF 5 M/S^2","JUST USE THE MACHINE THERE","CLICK THE RED BUTTON 2 TIMES AND TURN IT ON","CHANGE THE FORCE OF THE ROCKET","OK? THANK YOU"}, null, null, mapWidth, mapHeight); },
-                            () -> { dialog.show(layers, new String[]{"...","I SEE HOW IT IS","YOU'RE JUST LIKE JETROIDS","STUPID JETROIDS","STUPID YOU","I HATE YOU"}, null, null, mapWidth, mapHeight); }
+                            () -> { yesTrigger = true; dialog.show(layers, new String[]{"EXEMPLARY","I WANT IT TO MOVE WITH AN ACCELERATION OF 5 M/S^2","JUST USE THE MACHINE THERE","CLICK THE RED BUTTON 2 TIMES AND TURN IT ON","CHANGE THE FORCE OF THE ROCKET","OK? THANK YOU"}, null, null, mapWidth, mapHeight);},
+                            () -> { 
+                                dialog.show(layers, new String[]{"...","I SEE HOW IT IS","YOU'RE JUST LIKE JETROIDS","STUPID JETROIDS","STUPID YOU","I HATE YOU"}, null, null, mapWidth, mapHeight); 
+                            }
                         };
                         dialog.show(layers, lines, options, branches, mapWidth, mapHeight);
                     } else {
@@ -241,10 +272,10 @@ public class G4_Room1_PD4 implements KeyListener {
 
                                 characterPlace[oldR] = 1;
                                 characterPlace[oldN] = 1;
-                                
+
                                 layers.remove(rLabel);
                                 layers.remove(nLabel);
-                                
+
                                 rocketLocation = -1;
                                 NPCLocation = -1;
 
@@ -253,7 +284,7 @@ public class G4_Room1_PD4 implements KeyListener {
                                 int th = frameHeight / mapHeight;
                                 String html = "<html><img src='" + f.toURI().toString() + "' width='" + (tw * 4) + "' height='" + (th * 6) + "'></html>";
                                 JLabel explosionLabel = new JLabel(html);
-                                
+
                                 layers.add(explosionLabel, new Rectangle(nx, ny, 4, 6), JLayeredPane.DRAG_LAYER);
 
                                 layers.revalidate();
@@ -285,6 +316,7 @@ public class G4_Room1_PD4 implements KeyListener {
                                 JOptionPane.showMessageDialog(frame, "FORCE INPUTTED; ATTEMPT SUCCESS");
                                 dialog.show(layers, new String[]{"[The machine radiates with POWER!]", "[The rocket begins to whir.]", "[Let's get this show on the road.]"}, null, null, mapWidth, mapHeight);
                                 doneTrigger = true;
+                                saveProgress();
                             } else if (in != null) {
                                 JOptionPane.showMessageDialog(frame, "FORCE INPUTTED; ATTEMPT FAILURE");
                                 dialog.show(layers, new String[]{"[The machine grows tired of your measly efforts.]", "[...How does it even do that?]"}, null, null, mapWidth, mapHeight);

@@ -10,7 +10,7 @@ public class G4_Room2_PD6 implements KeyListener {
     JFrame frame;
     JLayeredPane layers;
     ImageIcon wall, tile, machine, pipe;
-    ImageIcon map, door, painting;
+    ImageIcon map, door, jetroids;
     ImageIcon NPCIcon, NPCIcon2;
 
     ImageIcon[] pUp = new ImageIcon[4];
@@ -29,12 +29,15 @@ public class G4_Room2_PD6 implements KeyListener {
     int frameHeight = 660;
     int characterPosition;
     int NPCLocation = -1, machineLocation = -1;
+    int objective = 0;
 
     //lalalal i love to code i love pd6 pd6 my best FRIEND.
-    boolean consoleDone = false;
+    boolean battleTriggered = false;
     boolean paintingDone = false;
+    boolean endDialog = false;
 
     Dialog dialog = new Dialog();
+    Battle battle = new Battle();
 
     public G4_Room2_PD6() {
         frame = new JFrame();
@@ -47,9 +50,9 @@ public class G4_Room2_PD6 implements KeyListener {
         machine = scale("images/.png", tw, th);
         pipe = scale("images/.png", tw, th);
         
-        map = new ImageIcon("images/G4_map.png");
-        door = new ImageIcon("images/G4_door.png");
-        painting = new ImageIcon("images/G4_painting.png");
+        map = scale("images/G4_map.png", 660, 660);
+        door = scale("images/G4_door.png", 660, 660);
+        jetroids = scale("images/G4_jetroids.png", 660, 660);
 
         for(int i = 0; i < 4; i++) {
             pUp[i] = scale("images/up_" + (i+1) + ".png", tw/2, th);
@@ -63,16 +66,16 @@ public class G4_Room2_PD6 implements KeyListener {
         NPCIcon2 = scale("images/.png", tw, th);
 
         characterPlace = new int[]{
-            0,0,0,0,1,2,1,0,0,0,0,
-            0,1,1,1,1,1,1,0,4,4,0,
-            0,1,1,1,1,1,1,0,1,1,0,
-            0,1,1,1,0,0,0,0,1,1,0,
-            0,1,1,1,3,1,1,5,1,1,0,
-            0,1,1,1,3,1,1,5,1,1,0,
-            0,1,1,1,0,1,1,0,1,1,0,
-            0,1,1,1,0,1,1,0,0,0,0,
-            0,1,1,1,1,1,1,1,1,1,0,
-            0,1,1,1,1,1,1,1,1,1,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,1,1,1,1,0,0,0,0,0,0,
+            0,1,1,1,1,0,0,0,0,0,0,
+            1,1,1,0,3,0,0,0,0,0,0,
+            2,1,1,0,3,0,1,1,1,4,0,
+            1,1,1,1,1,5,1,1,1,4,0,
+            0,1,1,1,1,5,1,1,1,4,0,
+            0,1,1,1,1,0,1,1,1,1,0,
+            0,1,1,1,1,0,1,1,1,1,0,
+            0,1,1,1,1,0,1,1,1,1,0,
             0,0,0,0,0,0,0,0,0,0,0
         };
 
@@ -96,6 +99,54 @@ public class G4_Room2_PD6 implements KeyListener {
                 default -> new JLabel(tile);
             };
         }
+        loadSaveData();
+        if (paintingDone == true) {
+            for (int i = 0; i < mapLayout.length; i++) {
+                if (mapLayout[i] == 5) {
+                    mapLayout[i] = 1;
+                    characterPlace[i] = 1;
+                    tiles[i].setIcon(tile);
+                }
+            }
+        }
+    }
+    
+    // =========================================================================
+    // Save integration — load
+    // =========================================================================
+    private void loadSaveData() {
+        SaveSystem.SaveData save = SaveSystem.loadGame("G4_Room2_PD6");
+
+        if (save.timeSeconds <= 0) {
+            SaveSystem.SaveData pd4Save = SaveSystem.loadGame("G4_Room1_PD4");
+            SaveSystem.startTimer(pd4Save.timeSeconds);
+        } else {
+            SaveSystem.startTimer(save.timeSeconds);
+        }
+
+        paintingDone = save.hasFlag("objective_painting");
+
+        // Recalculate collected count from flags (single source of truth)
+        objective = 0;
+        if (paintingDone) objective++;
+
+        // If Jetroids was permanently defeated, skip the battle trigger permanently
+        if (save.isDefeated("Jetroids")) battleTriggered = true;
+
+        System.out.println("[Room4] Loaded — Items:" + objective
+                + "/1  BattleDone:" + battleTriggered
+                + "  Time:" + save.formattedTime());
+    }
+
+    // =========================================================================
+    // Save integration — save
+    // =========================================================================
+    private void saveProgress() {
+        SaveSystem.saveGame(
+            new SaveSystem.SaveData.Builder("G4_Room2_PD6")
+                .flag(paintingDone ? "objective_painting" : null)
+                .battles(SaveSystem.getDefeatedBosses())   // always up-to-date list
+        );
     }
 
     private ImageIcon scale(String path, int w, int h) {
@@ -109,10 +160,10 @@ public class G4_Room2_PD6 implements KeyListener {
                 super.paintComponent(g);
                 // Draw static images at top-left corner
                 g.drawImage(map.getImage(), 0, 0, null);
+                g.drawImage(jetroids.getImage(), 0, 0, null);
                 if (!paintingDone) {
                     g.drawImage(door.getImage(), 0, 0, null);
                 }
-                g.drawImage(painting.getImage(), 0, 0, null);
             }
         };
         layers.setLayout(new GraphPaperLayout(new Dimension(mapWidth, mapHeight)));
@@ -147,6 +198,7 @@ public class G4_Room2_PD6 implements KeyListener {
 
 @Override
 public void keyPressed(KeyEvent e) {
+    battle.start(frame, "", "Bin Izharfed");
     if (dialog.isVisible()) return;
 
     int move = 0;
@@ -195,14 +247,48 @@ public void keyPressed(KeyEvent e) {
         if (interact >= 0 && interact < characterPlace.length) {
             int tileType = mapLayout[interact];
             if (tileType == 4) {
-                if (consoleDone == true) return;
-                dialog.show(layers, new String[]{"[It's a console.]","[The console is titled 'PALACEGATEBOTTOM'.]","[You immerse yourself in the console.]","[Just a warning ahead.. This console looks pretty hard to navigate in. It seems to delve into the most difficult mathematical concepts.]"}, null, null, mapWidth, mapHeight);
+                if (battleTriggered == true) {
+                    if (endDialog == false) {
+                        endDialog = true;
+                        String[] lines = {"hey, our business is already done.","you've done your deed.","why don't you go for everyone else now?","i just... gotta take a last look at everything.","you know, before it falls apart.","you know what? i was never under any heavy influence.","i just wanted to cause mischief for fun, and that nite amplified my imagination.","so much so that i began to fabricate stuff from my head.","i let it sit around my head because of that.","..yeah, that's enough talk.","better get moving."};
+                        dialog.show(layers, lines, null, null, mapWidth, mapHeight);
+                        return;
+                    }
+                    String[] lines = {"what'd i tell you?","you want to go down with this world?","just, leave where you came from.","i'll teleport you, i'll try."};
+                    dialog.show(layers, lines, null, null, mapWidth, mapHeight);
+                    return;
+                }
+                String[] regardless = {"AFTER THAT BIPOLAR MESS WITH TWO NAMES, YOU COME TO ME, JETROIDS","YOU WANT TO TAKE THIS NITE OUT OF ME, HUH?","BUT THIS IS WHAT DRIVES MY CREATIVITY. I DON'T WANT IT GONE...","...BUT IF IT CAN'T BE HELPED... IF YOU REALLY WANT TO BE SUCH A HERO...","...","then let's get started, shall we?"};
+                String[] lines = {"HEY THERE KID","ENJOY THE VIEW?"};
+                        String[] options = {"Yes", "I HATE IT."};
+                        Runnable[] branches = {
+                            () -> {
+                                String[] current = {"HAHAHA YOU'RE FUNNY","THESE BLACK CLOUDS ARE THE RESULT OF MY INFLICTED TORMENT TOWARDS OTHERS","AND I DO THAT FOR FUN","ANYWAY, I KNOW WHAT YOU'RE UP TO"};
+                                String[] yes = new String[current.length + regardless.length];
+                                System.arraycopy(current, 0, yes, 0, current.length);
+                                System.arraycopy(regardless, 0, yes, current.length, regardless.length);
+                                dialog.show(layers, yes, null, null, mapWidth, mapHeight);
+                                
+                            },
+                            () -> {
+                                String[] current = {"...","I'M MAD!","I'M REALLY MAD!!","BUT... UGH OKAY","I'LL TAKE THIS SERIOUSLY NOW","...WELL","TO PUT IT BLUNTLY, I KNOW WHAT YOU'RE UP TO"};
+                                String[] no = new String[current.length + regardless.length];
+                                System.arraycopy(current, 0, no, 0, current.length);
+                                System.arraycopy(regardless, 0, no, current.length, regardless.length);
+                                dialog.show(layers, no, null, null, mapWidth, mapHeight); 
+                            }
+                        };
+                dialog.show(layers, lines, options, branches, mapWidth, mapHeight);
                 Timer monitor = new Timer(100, ev -> {
                     if (!dialog.isVisible()) {
                         ((Timer)ev.getSource()).stop();
-                        String in = JOptionPane.showInputDialog(frame, "What is 1^999 + 0*5?", "PALACEGATEBOTTOM", JOptionPane.QUESTION_MESSAGE);
-                        if (in != null && in.equals("1")) {
-                            dialog.show(layers, new String[]{"[You.. are... a genius...]","[Something outside starts to rumble.]","[Seems like you're done with the room.]"}, null, null, mapWidth, mapHeight);
+                            battle.start(frame, "images/G4_jetroidsBG.png", "Jetroids");
+                            waitForBattleEnd(() -> {
+                                if (!SaveSystem.isDefeated("Jetroids")) {
+                                    SaveSystem.markDefeated("Jetroids");
+                                }
+                                saveProgress();
+                            });
                             for (int i = 0; i < mapLayout.length; i++) {
                                 if (mapLayout[i] == 5) {
                                     mapLayout[i] = 1;
@@ -210,10 +296,7 @@ public void keyPressed(KeyEvent e) {
                                     tiles[i].setIcon(tile);
                                 }
                             }
-                            consoleDone = true;
-                        } else if (in != null) {
-                            dialog.show(layers, new String[]{"[The painting removes the ink.]","[It seems that you put in the wrong potential energy.]"}, null, null, mapWidth, mapHeight);
-                        }
+                        battleTriggered = true;
                     }
                 });
                 monitor.start();
@@ -221,7 +304,7 @@ public void keyPressed(KeyEvent e) {
             
             if (tileType == 3) {
                 switch (direction) {
-                    case 2:
+                    case 1:
                         if (paintingDone == true) return;
                         dialog.show(layers, new String[]{"[It's a painting.]","[There is a blank box on the top right corner.]","[Maybe there's a value you're supposed to put.]"}, null, null, mapWidth, mapHeight);
                         Timer monitor = new Timer(100, ev -> {
@@ -239,7 +322,7 @@ public void keyPressed(KeyEvent e) {
                                     }
                                     paintingDone = true;
                                     layers.repaint();
-                                    
+                                    saveProgress();
                                 } else if (in != null) {
                                     dialog.show(layers, new String[]{"[The painting removes the ink.]","[It seems that you put in the wrong potential energy.]"}, null, null, mapWidth, mapHeight);
                                 }
@@ -247,7 +330,7 @@ public void keyPressed(KeyEvent e) {
                         });
                         monitor.start();
                         break;
-                    case 3:
+                    case 0:
                         dialog.show(layers, new String[] {
                             "[It's a painting.]",
                             "[The painting shows specifications for 'potential energy.']",
@@ -267,7 +350,18 @@ public void keyPressed(KeyEvent e) {
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
 
-    /*public static void main(String[] args) { 
+    private void waitForBattleEnd(Runnable onEnd) {
+        javax.swing.Timer poller = new javax.swing.Timer(200, null);
+        poller.addActionListener(ev -> {
+            if (!Battle.paused) {          // battle overlay is gone
+                poller.stop();
+                onEnd.run();
+            }
+        });
+        poller.start();
+    }
+    
+    public static void main(String[] args) { 
         new G4_Room2_PD6().setFrame(); 
-    }*/
+    }
 }
