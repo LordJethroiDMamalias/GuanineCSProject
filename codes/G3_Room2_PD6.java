@@ -109,7 +109,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
             }
 
             bg            = new ImageIcon("images/G3_background.png").getImage();
-            npcSprite     = new ImageIcon("images/G3_Celene.png").getImage();
+            npcSprite     = new ImageIcon("images/Celene.png").getImage();
             niteIcon      = new ImageIcon("images/G3_nite.png").getImage();
             shiningSprite = new ImageIcon("images/G3_light.png").getImage();
             characterImg  = new ImageIcon("images/G3_FEDORA.png").getImage();
@@ -404,7 +404,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
             showDialogue       = false;
             finalBossTriggered = true;
             
-            battle.start(frame, "images/G3_background.png", "G3_Celene.png");
+            battle.start(frame, "images/G3_background.png", "Celene");
             
             // Set ending state immediately
             inEnding = true; 
