@@ -5,12 +5,12 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-import java.io.File;
+import java.io.*;
 
-public class BossRoom extends JPanel implements KeyListener {
+public class minibossroom extends JPanel implements KeyListener {
 
-    final int COLS = 23;
-    final int ROWS = 13;
+    final int COLS = 33;
+    final int ROWS = 20;
 
     final int WIDTH = 660;
     final int HEIGHT = 660;
@@ -18,26 +18,34 @@ public class BossRoom extends JPanel implements KeyListener {
     final int TILE_W = WIDTH / COLS;
     final int TILE_H = HEIGHT / ROWS;
 
-    int gridX = 8;
-    int gridY = 10;
+    int gridX = 11;
+    int gridY = 14;
 
     BufferedImage mapImg;
+
     BufferedImage playerUp, playerDown, playerLeft, playerRight;
     BufferedImage currentPlayer;
 
     boolean[][] walkable = new boolean[ROWS][COLS];
 
+    final int doorX = 15;
+    final int doorY = 7;
+
     BufferedImage load(String name){
-        try{return ImageIO.read(new File("src/assets/"+name));}
-        catch(Exception e){return null;}
+        try {
+            return ImageIO.read(new File("src/assets/" + name));
+        } catch(Exception e){
+            System.out.println("Failed to load: " + name);
+            return null;
+        }
     }
 
-    public BossRoom(){
+    public minibossroom(){
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setFocusable(true);
         addKeyListener(this);
 
-        mapImg = load("G10_map 1.png");
+        mapImg = load("G10_map 2.png");
 
         playerUp = load("G10_character_up.png");
         playerDown = load("G10_character_down.png");
@@ -47,6 +55,12 @@ public class BossRoom extends JPanel implements KeyListener {
         currentPlayer = playerDown;
 
         generateCollision();
+
+        if(!walkable[gridY][gridX]){
+            gridY = 12;
+        }
+
+        requestFocusInWindow();
     }
 
     void generateCollision(){
@@ -65,11 +79,6 @@ public class BossRoom extends JPanel implements KeyListener {
                 if(px >= imgW) px = imgW - 1;
                 if(py >= imgH) py = imgH - 1;
 
-                if(py < imgH * 0.18){
-                    walkable[y][x] = true;
-                    continue;
-                }
-
                 int rgb = mapImg.getRGB(px, py);
                 Color c = new Color(rgb);
 
@@ -77,17 +86,55 @@ public class BossRoom extends JPanel implements KeyListener {
                 int g = c.getGreen();
                 int b = c.getBlue();
 
-                boolean isWall = (r < 65 && g < 65 && b < 65);
+                boolean isBlocked =
+                        (b > 120 && g > 120) ||
+                        (r < 70 && g < 70 && b < 70);
 
-                walkable[y][x] = !isWall;
+                if(x == doorX && y == doorY){
+                    walkable[y][x] = true;
+                    continue;
+                }
+
+                walkable[y][x] = !isBlocked;
             }
         }
     }
 
-    int px(){ return gridX * TILE_W; }
-    int py(){ return gridY * TILE_H; }
+    boolean isAtDoor(int x, int y){
+        return x == doorX && y == doorY;
+    }
 
-    void move(int dx, int dy, BufferedImage dir){
+    void saveProgress(){
+        try{
+            FileWriter fw = new FileWriter("save.txt");
+            fw.write("ENTERED_MINIBOSS");
+            fw.close();
+        }catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    void enterDoor(){
+        saveProgress();
+
+        JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
+        current.dispose();
+
+        SwingUtilities.invokeLater(() -> {
+            JFrame bossFrame = new JFrame("Boss Room");
+            BossRoom boss = new BossRoom();
+
+            bossFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            bossFrame.add(boss);
+            bossFrame.pack();
+            bossFrame.setLocationRelativeTo(null);
+            bossFrame.setVisible(true);
+
+            boss.requestFocusInWindow();
+        });
+    }
+
+    public void move(int dx, int dy){
 
         int nx = gridX + dx;
         int ny = gridY + dy;
@@ -97,7 +144,16 @@ public class BossRoom extends JPanel implements KeyListener {
 
         gridX = nx;
         gridY = ny;
-        currentPlayer = dir;
+
+        if(dx == 1) currentPlayer = playerRight;
+        else if(dx == -1) currentPlayer = playerLeft;
+        else if(dy == -1) currentPlayer = playerUp;
+        else if(dy == 1) currentPlayer = playerDown;
+
+        if(isAtDoor(gridX, gridY)){
+            enterDoor();
+            return;
+        }
 
         repaint();
     }
@@ -105,42 +161,43 @@ public class BossRoom extends JPanel implements KeyListener {
     @Override
     public void paintComponent(Graphics g){
         super.paintComponent(g);
+
+        g.drawImage(mapImg, 0, 0, WIDTH, HEIGHT, null);
+
         Graphics2D g2 = (Graphics2D) g;
+        g2.setColor(new Color(100, 200, 255));
+        g2.setStroke(new BasicStroke(2));
+        g2.drawRect(doorX * TILE_W, doorY * TILE_H, TILE_W, TILE_H);
 
-        if(mapImg != null){
-            g2.drawImage(mapImg, 0, 0, WIDTH, HEIGHT, null);
-        }
-
-        if(currentPlayer != null){
-            g2.drawImage(currentPlayer, px(), py(), TILE_W, TILE_H, null);
-        }
+        g.drawImage(currentPlayer,
+                gridX * TILE_W,
+                gridY * TILE_H,
+                TILE_W,
+                TILE_H,
+                null);
     }
 
     @Override
     public void keyPressed(KeyEvent e){
-
-        if(e.getKeyCode()==KeyEvent.VK_W)
-            move(0,-1,playerUp);
-
-        if(e.getKeyCode()==KeyEvent.VK_S)
-            move(0,1,playerDown);
-
-        if(e.getKeyCode()==KeyEvent.VK_A)
-            move(-1,0,playerLeft);
-
-        if(e.getKeyCode()==KeyEvent.VK_D)
-            move(1,0,playerRight);
+        if(e.getKeyCode() == KeyEvent.VK_W) move(0, -1);
+        if(e.getKeyCode() == KeyEvent.VK_S) move(0, 1);
+        if(e.getKeyCode() == KeyEvent.VK_A) move(-1, 0);
+        if(e.getKeyCode() == KeyEvent.VK_D) move(1, 0);
     }
 
     public void keyReleased(KeyEvent e){}
     public void keyTyped(KeyEvent e){}
 
     public static void main(String[] args){
-        JFrame f = new JFrame("Boss Room");
+        JFrame f = new JFrame("Island");
+        minibossroom game = new minibossroom();
+
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(new BossRoom());
+        f.add(game);
         f.pack();
         f.setLocationRelativeTo(null);
         f.setVisible(true);
+
+        game.requestFocusInWindow();
     }
 }
