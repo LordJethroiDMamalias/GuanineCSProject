@@ -1,8 +1,10 @@
+package codes;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-public class G7_Room2_PD4 extends JPanel implements KeyListener {
+public class G7_Room2_PD6 extends JPanel implements KeyListener {
 
     final int TILE = 40;
 
@@ -24,30 +26,32 @@ public class G7_Room2_PD4 extends JPanel implements KeyListener {
     int playerRow = 1;
     int playerCol = 1;
 
-    boolean talkedToNPC = false;
-    boolean gameFinished = false;
+    boolean talkedToNPC      = false;
+    boolean firstEncounterDone = false;  // true after first step on 'E'
+    boolean bossDefeated     = false;
 
     int playerHP = 100;
-    int bossHP = 100;
 
-    public G7_Room1_PD4() {
+    Battle battle = new Battle();
+
+    JFrame frame;
+
+    public G7_Room2_PD6() {
         setPreferredSize(new Dimension(cols * TILE, rows * TILE + 70));
         setFocusable(true);
         addKeyListener(this);
 
-        // SPRITES (RENAMED VARIABLES)
-        G7_player = new ImageIcon(getClass().getResource("/assets/player.png")).getImage();
-        G7_wall   = new ImageIcon(getClass().getResource("/assets/wall.png")).getImage();
-        G7_npc    = new ImageIcon(getClass().getResource("/assets/npc.png")).getImage();
-        G7_enemy  = new ImageIcon(getClass().getResource("/assets/enemy.png")).getImage();
-        G7_floor  = new ImageIcon(getClass().getResource("/assets/floor.png")).getImage();
+        G7_player = new ImageIcon(getClass().getResource("/Images/player.png")).getImage();
+        G7_wall   = new ImageIcon(getClass().getResource("/Images/wall.png")).getImage();
+        G7_npc    = new ImageIcon(getClass().getResource("/Images/npc.png")).getImage();
+        G7_enemy  = new ImageIcon(getClass().getResource("/Images/enemy.png")).getImage();
+        G7_floor  = new ImageIcon(getClass().getResource("/Images/floor.png")).getImage();
     }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        // MAZE
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
 
@@ -69,145 +73,96 @@ public class G7_Room2_PD4 extends JPanel implements KeyListener {
             }
         }
 
-        // PLAYER
         g.drawImage(G7_player, playerCol * TILE, playerRow * TILE, TILE, TILE, null);
 
-        // PLAYER HP BAR
+        // HP bar — player
         g.setColor(Color.RED);
         g.fillRect(20, rows * TILE + 10, 200, 20);
-
         g.setColor(Color.GREEN);
         g.fillRect(20, rows * TILE + 10, Math.max(0, playerHP * 2), 20);
-
         g.setColor(Color.BLACK);
         g.drawRect(20, rows * TILE + 10, 200, 20);
         g.drawString("Player HP: " + playerHP, 20, rows * TILE + 45);
-
-        // BOSS HP BAR
-        g.setColor(Color.RED);
-        g.fillRect(260, rows * TILE + 10, 200, 20);
-
-        g.setColor(Color.GREEN);
-        g.fillRect(260, rows * TILE + 10, Math.max(0, bossHP * 2), 20);
-
-        g.setColor(Color.BLACK);
-        g.drawRect(260, rows * TILE + 10, 200, 20);
-        g.drawString("RYAN HP: " + bossHP, 260, rows * TILE + 45);
     }
 
     void movePlayer(int dr, int dc) {
         int newRow = playerRow + dr;
         int newCol = playerCol + dc;
 
-        char destination = maze[newRow].charAt(newCol);
+        if (newRow < 0 || newRow >= rows || newCol < 0 || newCol >= cols) return;
+        if (maze[newRow].charAt(newCol) == '1') return;
 
-        if (destination == '1') return;
+        char destination = maze[newRow].charAt(newCol);
 
         playerRow = newRow;
         playerCol = newCol;
 
-        // NPC BOOST
+        // NPC boost — unchanged
         if (destination == 'N' && !talkedToNPC) {
             talkedToNPC = true;
             playerHP += 30;
-
             JOptionPane.showMessageDialog(this,
                     "NPC: RYAN is dangerous...\n" +
                     "Take this blessing (+30 HP)\n" +
                     "Your HP: " + playerHP);
-
             repaint();
         }
 
-        // ENEMY
-        if (destination == 'E' && !gameFinished) {
-            startBattle();
+        // Enemy tile — two-stage interaction
+        if (destination == 'E') {
+            if (!firstEncounterDone) {
+                firstEncounterDone = true;
+                JOptionPane.showMessageDialog(this,
+                        "A dark presence looms...\nRYAN is watching you.");
+            } else if (!bossDefeated) {
+                triggerBossBattle();
+                return;
+            }
         }
 
         repaint();
     }
 
-    void startBattle() {
-        bossHP = 100;
+    void triggerBossBattle() {
+        Window window = SwingUtilities.getWindowAncestor(this);
+        if (!(window instanceof JFrame f)) return;
 
-        JOptionPane.showMessageDialog(this,
-                "😈 RYAN Appears!\nBattle Start!");
+        // Hand off current player HP into the battle system
+        battle.hp    = playerHP;
+        battle.maxHp = playerHP;
 
-        while (playerHP > 0 && bossHP > 0) {
+        battle.start(f, "TRY THIS", "RYAN");
 
-            String q = JOptionPane.showInputDialog(this,
-                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
-                    "\n\nRYAN:\nFind the MEAN of 2, 4, 6");
+        // Poll every 500ms until Battle.paused goes false (battle ended)
+        Timer checkEnd = new Timer(500, null);
+        checkEnd.addActionListener(e -> {
+            if (!Battle.paused) {
+                checkEnd.stop();
+                playerHP = battle.hp;  // write HP back after battle ends
 
-            if ("4".equals(q)) {
-                bossHP -= 30;
-                playerHP += 10;
-                JOptionPane.showMessageDialog(this, "Correct! 30 dmg +10 HP!");
-            } else {
-                playerHP -= 40;
-                JOptionPane.showMessageDialog(this, "Wrong! RYAN hits you (-40 HP)");
+                if (playerHP <= 0) {
+                    JOptionPane.showMessageDialog(this, "You were defeated...");
+                    System.exit(0);
+                } else {
+                    bossDefeated = true;
+                    JOptionPane.showMessageDialog(this,
+                            "You defeated RYAN!\nYou got the money 💰");
+                    repaint();
+                }
+
+                requestFocusInWindow();  // restore key input after battle UI closes
             }
-
-            repaint(); pause();
-            if (bossHP <= 0 || playerHP <= 0) break;
-
-            q = JOptionPane.showInputDialog(this,
-                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
-                    "\n\nRYAN:\nFind the MEDIAN of 3, 7, 9");
-
-            if ("7".equals(q)) {
-                bossHP -= 30;
-                playerHP += 10;
-                JOptionPane.showMessageDialog(this, "Correct! 30 dmg +10 HP!");
-            } else {
-                playerHP -= 40;
-                JOptionPane.showMessageDialog(this, "Wrong! RYAN hits you (-40 HP)");
-            }
-
-            repaint(); pause();
-            if (bossHP <= 0 || playerHP <= 0) break;
-
-            q = JOptionPane.showInputDialog(this,
-                    "Your HP: " + playerHP + " | RYAN HP: " + bossHP +
-                    "\n\nRYAN:\nFind the MODE of 1, 2, 2, 3");
-
-            if ("2".equals(q)) {
-                bossHP -= 30;
-                playerHP += 10;
-                JOptionPane.showMessageDialog(this, "Correct! 30 dmg +10 HP!");
-            } else {
-                playerHP -= 40;
-                JOptionPane.showMessageDialog(this, "Wrong! RYAN hits you (-40 HP)");
-            }
-
-            repaint(); pause();
-        }
-
-        if (playerHP <= 0) {
-            JOptionPane.showMessageDialog(this,
-                    "💀 You were defeated by RYAN...\nGame Over.");
-            System.exit(0);
-        } else {
-            JOptionPane.showMessageDialog(this,
-                    "🎉 You defeated RYAN!\nYou got the money 💰");
-            gameFinished = true;
-        }
-    }
-
-    void pause() {
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        });
+        checkEnd.start();
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
+        if (Battle.paused) return;  // block movement while battle is active
         switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP -> movePlayer(-1, 0);
-            case KeyEvent.VK_DOWN -> movePlayer(1, 0);
-            case KeyEvent.VK_LEFT -> movePlayer(0, -1);
+            case KeyEvent.VK_UP    -> movePlayer(-1, 0);
+            case KeyEvent.VK_DOWN  -> movePlayer(1, 0);
+            case KeyEvent.VK_LEFT  -> movePlayer(0, -1);
             case KeyEvent.VK_RIGHT -> movePlayer(0, 1);
         }
     }
@@ -216,9 +171,13 @@ public class G7_Room2_PD4 extends JPanel implements KeyListener {
     @Override public void keyTyped(KeyEvent e) {}
 
     public static void main(String[] args) {
-        JFrame frame = new JFrame("Maze RPG: RYAN Boss Fight");
+        JFrame frame = new JFrame("Room 2 - G7");
+        G7_Room2_PD6 panel = new G7_Room2_PD6();
+
+        panel.frame = frame;
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(new G7_Room1_PD4());
+        frame.add(panel);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
