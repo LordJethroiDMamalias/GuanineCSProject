@@ -90,7 +90,7 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
             }
 
             bg        = new ImageIcon("images/G3_background.png").getImage();
-            npcSprite = new ImageIcon("images/G3_npc.png").getImage();
+            npcSprite = new ImageIcon("images/Celene.png").getImage();
             niteIcon  = new ImageIcon("images/G3_nite2.png").getImage();
             light1    = new ImageIcon("images/G3_light1.png").getImage();
             light2    = new ImageIcon("images/G3_light2.png").getImage();
