@@ -1,5 +1,7 @@
 package codes;
-
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -11,10 +13,39 @@ import java.util.Random;
  *
  * All answers are text (isNumeric = false) unless the answer is purely
  * numeric (e.g. a year), in which case isNumeric = true.
+ *
+ * Each question is asked at most once per cycle. A question is removed from
+ * the pool as soon as it is returned by next(), regardless of whether the
+ * player answered correctly or not. When all questions in a category have
+ * been asked, that category resets and reshuffles automatically.
  */
 public class BinIzharfedPool implements QuestionPool.Pool {
 
     private static final Random RNG = new Random();
+
+    // =========================================================================
+    // Tracking — indices of questions NOT yet asked this cycle
+    // =========================================================================
+
+    private final List<Integer> saudiRemaining = new ArrayList<>();
+    private final List<Integer> worldRemaining  = new ArrayList<>();
+
+    public BinIzharfedPool() {
+        resetSaudi();
+        resetWorld();
+    }
+
+    private void resetSaudi() {
+        saudiRemaining.clear();
+        for (int i = 0; i < SAUDI_POOL.length; i++) saudiRemaining.add(i);
+        Collections.shuffle(saudiRemaining, RNG);
+    }
+
+    private void resetWorld() {
+        worldRemaining.clear();
+        for (int i = 0; i < WORLD_POOL.length; i++) worldRemaining.add(i);
+        Collections.shuffle(worldRemaining, RNG);
+    }
 
     // =========================================================================
     // Public factory — implements QuestionPool.Pool
@@ -22,7 +53,23 @@ public class BinIzharfedPool implements QuestionPool.Pool {
 
     @Override
     public ChallengeDialog.Question next() {
-        return RNG.nextBoolean() ? saudiQuestion() : worldQuestion();
+        // Reset a category the moment it runs out
+        if (saudiRemaining.isEmpty()) resetSaudi();
+        if (worldRemaining.isEmpty())  resetWorld();
+
+        // Pick a category at random; if one is empty, always pick the other
+        boolean pickSaudi = RNG.nextBoolean();
+        if (saudiRemaining.isEmpty()) pickSaudi = false;
+        if (worldRemaining.isEmpty())  pickSaudi = true;
+
+        if (pickSaudi) {
+            // Remove the chosen index so it won't appear again this cycle
+            int idx = saudiRemaining.remove(RNG.nextInt(saudiRemaining.size()));
+            return saudiQuestion(idx);
+        } else {
+            int idx = worldRemaining.remove(RNG.nextInt(worldRemaining.size()));
+            return worldQuestion(idx);
+        }
     }
 
     // =========================================================================
@@ -34,24 +81,27 @@ public class BinIzharfedPool implements QuestionPool.Pool {
         { "What is the capital city of Saudi Arabia?",
           "riyadh", "Riyadh",
           "It is located in the Najd region in the centre of the Arabian Peninsula", "n" },
-        { "What is the largest city in Saudi Arabia?",
-          "riyadh", "Riyadh",
-          "It is also the political and administrative capital", "n" },
+        { "What is the desert climate type mostly found in Saudi Arabia?",
+          "arid", "Arid (desert climate)",
+          "It has very little rainfall and very high temperatures", "n" },
         { "What body of water lies to the west of Saudi Arabia?",
           "red sea", "Red Sea",
           "This sea connects to the Suez Canal to the north", "n" },
         { "What body of water lies to the east of Saudi Arabia?",
           "persian gulf", "Persian Gulf (Arabian Gulf)",
           "Also called the Arabian Gulf; major oil tanker route", "n" },
-        { "What is the name of the world's largest continuous sand desert, located mostly in Saudi Arabia?",
-          "rub al khali", "Rub' al Khali (Empty Quarter)",
-          "Its Arabic name means 'Empty Quarter'", "n" },
-        { "Which two cities in Saudi Arabia are the holiest sites in Islam?",
-          "mecca", "Mecca (and Medina)",
-          "The birthplace of Islam and the home of the Prophet's Mosque", "n" },
+        { "What is the Islamic holy month when Muslims fast from sunrise to sunset?",
+          "ramadan", "Ramadan",
+          "It is one of the Five Pillars of Islam", "n" },
         { "What is the holy book of Islam, central to Saudi Arabian culture?",
           "quran", "Quran (Qur'an)",
           "Also spelled Koran; it is written in classical Arabic", "n" },
+        { "What strategic strait lies between the Persian Gulf and the Gulf of Oman?",
+          "strait of hormuz", "Strait of Hormuz",
+          "A narrow passage critical for global oil transport", "n" }, 
+        { "What is the capital of United Arab Emirates (UAE)?",
+          "abu dhabi", "Abu Dhabi",
+          "It's not Dubai.", "n" },
         // History
         { "In what year was the modern Kingdom of Saudi Arabia officially founded?",
           "1932", "1932",
@@ -62,19 +112,16 @@ public class BinIzharfedPool implements QuestionPool.Pool {
         { "What major natural resource, discovered in 1938, drives Saudi Arabia's economy?",
           "oil", "Oil (Petroleum / Crude Oil)",
           "Saudi Arabia has some of the world's largest proven reserves", "n" },
-        { "What is the name of the Saudi Arabian state oil company, one of the largest in the world?",
-          "aramco", "Saudi Aramco",
-          "Its full name is Saudi Arabian Oil Company", "n" },
         // Government and Vision
         { "What type of government does Saudi Arabia have?",
           "absolute monarchy", "Absolute Monarchy",
           "The king holds supreme authority; law is based on Islamic Sharia", "n" },
-        { "What is the name of Saudi Arabia's ambitious economic reform plan launched in 2016?",
-          "vision 2030", "Vision 2030",
-          "It aims to diversify the economy away from oil dependence", "n" },
         { "Who is the Crown Prince and Prime Minister of Saudi Arabia as of 2024?",
           "mohammed bin salman", "Mohammed bin Salman (MBS)",
           "Often referred to by his initials MBS", "n" },
+        { "Who is considered the final prophet in Islam?", 
+          "muhammad", "Muhammad", 
+          "Founder of Islam and regarded as the last prophet", "n" },
         // Culture
         { "What is the official language of Saudi Arabia?",
           "arabic", "Arabic",
@@ -87,8 +134,8 @@ public class BinIzharfedPool implements QuestionPool.Pool {
           "Also spelled Rial; its code is SAR", "n" },
     };
 
-    private static ChallengeDialog.Question saudiQuestion() {
-        String[] e = SAUDI_POOL[RNG.nextInt(SAUDI_POOL.length)];
+    private static ChallengeDialog.Question saudiQuestion(int index) {
+        String[] e = SAUDI_POOL[index];
         boolean numeric = "y".equals(e[4]);
         return new ChallengeDialog.Question(
                 "<html><center>" + e[0] + "</center></html>",
@@ -161,17 +208,17 @@ public class BinIzharfedPool implements QuestionPool.Pool {
           "Founded by Genghis Khan in the 13th century", "n" },
         { "What year did the Berlin Wall fall, symbolising the end of the Cold War?",
           "1989", "1989",
-          "It fell on November 9, 1989", "y" },
+          "Around the 1980s", "y" },
         { "What is the name of the international organisation formed after World War II to maintain peace?",
           "united nations", "United Nations (UN)",
           "It was established in 1945 and is headquartered in New York City", "n" },
         { "Which country has the largest population in the world?",
           "india", "India",
-          "India surpassed China as the most populous country in 2023", "n" },
+          "It surpassed China as the most populous country in 2023", "n" },
     };
 
-    private static ChallengeDialog.Question worldQuestion() {
-        String[] e = WORLD_POOL[RNG.nextInt(WORLD_POOL.length)];
+    private static ChallengeDialog.Question worldQuestion(int index) {
+        String[] e = WORLD_POOL[index];
         boolean numeric = "y".equals(e[4]);
         return new ChallengeDialog.Question(
                 "<html><center>" + e[0] + "</center></html>",
