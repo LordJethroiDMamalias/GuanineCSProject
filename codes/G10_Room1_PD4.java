@@ -178,7 +178,7 @@ public class minibossroom extends JPanel implements KeyListener {
             "Don Malek: 'You shouldn\u2019t have come here.'",
             "Don Malek: 'Let\u2019s settle this properly.'"
         }, () -> {
-            battle.start(frame, "src/assets/G10_battleBG.png", "Don Malek");
+            battle.start(frame, "src/images/G10_battleBG.png", "Don Malek");
 
             Timer poll = new Timer(300, null);
             poll.addActionListener(ev -> {
@@ -364,4 +364,20 @@ if (e.getKeyCode() == KeyEvent.VK_RIGHT) move(1, 0, playerRight);
         f.add(game); f.pack(); f.setLocationRelativeTo(null); f.setVisible(true);
         game.requestFocusInWindow();
     }
+    
+    public static void openMinibossRoom() {
+    SwingUtilities.invokeLater(() -> {
+        JFrame f = new JFrame("Mini Boss Room");
+        minibossroom game = new minibossroom();
+
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.add(game);
+        f.pack();
+        f.setLocationRelativeTo(null);
+        f.setVisible(true);
+
+        game.requestFocusInWindow();
+    });
 }
+}
+
