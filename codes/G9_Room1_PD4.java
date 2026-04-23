@@ -84,7 +84,7 @@
             int cw = (int)(tw * 0.7);
             int ch = (int)(th * 0.7);
 
-            ImageIcon mapImg = new ImageIcon("images/PDs game/map1/map1f.png");
+            ImageIcon mapImg = new ImageIcon("images/PDs game/map1/G9_map1f.png");
             background = new JLabel(new ImageIcon(mapImg.getImage().getScaledInstance(frW, frH, Image.SCALE_DEFAULT)));
 
             // Assets
@@ -102,11 +102,11 @@
             pRight1 = scale("images/PDs game/univ/G9_pRight.png", cw, ch);
             pRight2 = scale("images/PDs game/univ/G9_pRight2.png", cw, ch);
 
-            npcKid = scale("images/PDs game/map1/caseohT.png", cw, ch);
-            tYoyo = scale("images/PDs game/map1/yoyo.png", cw, ch);
-            tCar = scale("images/PDs game/map1/locket.png", cw, ch);
-            tKite = scale("images/PDs game/map1/torn kite.png", cw, ch);
-            tBear = scale("images/PDs game/map1/teddy.png", cw, ch);
+            npcKid = scale("images/PDs game/map1/G9_caseohT.png", cw, ch);
+            tYoyo = scale("images/PDs game/map1/G9_yoyo.png", cw, ch);
+            tCar = scale("images/PDs game/map1/G9_locket.png", cw, ch);
+            tKite = scale("images/PDs game/map1/G9_torn kite.png", cw, ch);
+            tBear = scale("images/PDs game/map1/G9_teddy.png", cw, ch);
 
             playMusic("dungeon9.wav");
 
