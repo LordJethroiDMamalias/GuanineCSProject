@@ -1,18 +1,5 @@
 package bossroom;
 
-/*
- * ── SETUP NOTE ───────────────────────────────────────────────────────────────
- * This file lives in  src/bossroom/minibossroom.java
- * Battle.java lives in  src/codes/Battle.java
- *
- * In NetBeans: right-click the project → Properties → Sources
- * Make sure the Source Package Folder is "src" (not "src/bossroom").
- * Both packages must sit under the SAME source root.
- *
- * Still failing? Right-click project → Clean and Build, then Run.
- * ─────────────────────────────────────────────────────────────────────────────
- */
-
 //it doesnt work fully pa pero na implement ko na ang dialogue and battle system imma fix tmrw
 
 import codes.Battle;
@@ -50,6 +37,8 @@ public class minibossroom extends JPanel implements KeyListener {
     int gridX = SPAWN_X;
     int gridY = SPAWN_Y;
 
+    private static final String BATTLE_BG_PATH = "src/images/";
+    
     // ── Images ────────────────────────────────────────────────────────────────
     BufferedImage mapImg;
     BufferedImage playerUp, playerDown, playerLeft, playerRight;
@@ -104,9 +93,15 @@ public class minibossroom extends JPanel implements KeyListener {
     // Asset loading
     // =========================================================================
     BufferedImage load(String name) {
-        try   { return ImageIO.read(new File("src/images/" + name)); }
-        catch (Exception e) { System.out.println("Could not load: " + name); return null; }
+    try {
+        return ImageIO.read(
+            getClass().getClassLoader().getResourceAsStream("images/" + name)
+        );
+    } catch (Exception e) {
+        System.out.println("Could not load: " + name);
+        return null;
     }
+}        
 
     // =========================================================================
     // Collision
@@ -168,25 +163,33 @@ public class minibossroom extends JPanel implements KeyListener {
     // Boss battle
     // =========================================================================
     private void triggerBossBattle() {
-        battleActive    = true;
-        battleStartTime = System.currentTimeMillis();
-        Battle.paused   = true;
+    battleActive    = true;
+    battleStartTime = System.currentTimeMillis();
+    Battle.paused   = true;
 
-        JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        showDialog(new String[]{
-            "Don Malek raises his glass.",
-            "Don Malek: 'You shouldn\u2019t have come here.'",
-            "Don Malek: 'Let\u2019s settle this properly.'"
-        }, () -> {
-            battle.start(frame, "src/images/G10_battleBG.png", "Don Malek");
+    JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
 
-            Timer poll = new Timer(300, null);
-            poll.addActionListener(ev -> {
-                if (!Battle.paused) { poll.stop(); battleActive = false; onBattleEnd(frame); }
-            });
-            poll.start();
+    showDialog(new String[]{
+        "Don Malek raises his glass.",
+        "Don Malek: 'You shouldn’t have come here.'",
+        "Don Malek: 'Let’s settle this properly.'"
+    }, () -> {
+
+        String bg = BATTLE_BG_PATH + "G10_battleBG.png";
+
+        battle.start(frame, bg, "Don Malek");
+
+        Timer poll = new Timer(300, null);
+        poll.addActionListener(ev -> {
+            if (!Battle.paused) {
+                poll.stop();
+                battleActive = false;
+                onBattleEnd(frame);
+            }
         });
-    }
+        poll.start();
+    });
+}
 
     private void onBattleEnd(JFrame frame) {
         saveData = SaveSystem.loadGame();
@@ -364,20 +367,4 @@ if (e.getKeyCode() == KeyEvent.VK_RIGHT) move(1, 0, playerRight);
         f.add(game); f.pack(); f.setLocationRelativeTo(null); f.setVisible(true);
         game.requestFocusInWindow();
     }
-    
-    public static void openMinibossRoom() {
-    SwingUtilities.invokeLater(() -> {
-        JFrame f = new JFrame("Mini Boss Room");
-        minibossroom game = new minibossroom();
-
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(game);
-        f.pack();
-        f.setLocationRelativeTo(null);
-        f.setVisible(true);
-
-        game.requestFocusInWindow();
-    });
-}
-}
-
+}        
