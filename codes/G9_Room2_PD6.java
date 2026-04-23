@@ -3,13 +3,20 @@ package codes;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 
 /*grp: ancla, badayos, sepe*/
+
 public class G9_Room2_PD6 implements KeyListener {
     // --- UI Components ---
     JFrame frame;
     JLayeredPane layeredPane;
     JLabel background;
+    JLabel cutscene;
+    JPanel blackOverlay;
     JPanel charPanel; 
     JLabel[] gridSlots;
 
@@ -20,9 +27,9 @@ public class G9_Room2_PD6 implements KeyListener {
     // --- Settings & State ---
     int mapW = 11;
     int mapH = 11;
-    int frW = 660;
-    int frH = 660;
-    int characterPosition = 93; 
+    int frW = 660, frH = 660;
+    int cutW = 540, cutH = 540;
+    int characterPosition = 66; 
     int grandmaPos = 92;
     int grandpaPos = 78;
     int binPos1 = 102; 
@@ -40,9 +47,15 @@ public class G9_Room2_PD6 implements KeyListener {
     private int trashCleared = 0; // Encapsulated: Now private
     public boolean rewardGiven = false;
     public boolean[] cleared; 
+    boolean finalDialog = false;
+    boolean objComplete = false;
+    boolean miniDefeat = false;
+    boolean talkedGrandma = false;
     int[] mapLayout = new int[121]; 
-    Dialogue dialog = new Dialogue();
-
+    Dialog dialog = new Dialog();
+    Battle battle = new Battle();        
+    private boolean battleTriggered = false;
+    
     // --- Getter and Setter for trashCleared ---
     public int getTrashCleared() {
         return trashCleared;
@@ -50,14 +63,19 @@ public class G9_Room2_PD6 implements KeyListener {
 
     public void incrementTrashCleared() {
         this.trashCleared++;
+        saveProgress();
     }
 
-    public PD6_gameobj2() {
+    public G9_Room2_PD6() {
         frame = new JFrame("PD6");
         layeredPane = new JLayeredPane();
         cleared = new boolean[121]; 
         
-        ImageIcon mapImg = new ImageIcon("images/map2.png");
+        ImageIcon mapImg = new ImageIcon("images/PDs game/map2/map2_updated.png");
+        background = new JLabel(new ImageIcon(mapImg.getImage().getScaledInstance(frW, frH, Image.SCALE_DEFAULT)));
+        ImageIcon panelImg = new ImageIcon("images/PDs game/map2/cutscn1.png");
+        cutscene = new JLabel(new ImageIcon(panelImg.getImage().getScaledInstance(cutW, cutH, Image.SCALE_DEFAULT)));
+        
         if (mapImg.getImageLoadStatus() == MediaTracker.COMPLETE) {
              mapImg = new ImageIcon(mapImg.getImage().getScaledInstance(frW, frH, Image.SCALE_SMOOTH));
         }
@@ -68,23 +86,24 @@ public class G9_Room2_PD6 implements KeyListener {
         int cw = (int)(tw * 0.6); 
         int ch = (int)(th * 0.6);
 
-        pStand = scale("images/G9_pFront.png", cw, ch);
-        pFrontW = scale("images/G9_pFront.png", cw, ch);
-        pFrontW1 = scale("images/G9_pFrontLW.png", cw, ch);
-        pFrontW2 = scale("images/G9_pFrontRW.png", cw, ch);
-        pBack = scale("images/G9_pBack.png", cw, ch);
-        pBack1 = scale("images/G9_pBack1.png", cw, ch);
-        pBack2 = scale("images/G9_pBack2.png", cw, ch);
-        pLeft = scale("images/G9_pLeft.png", cw, ch);
-        pLeft1 = scale("images/G9_pLeft1.png", cw, ch);
-        pLeft2 = scale("images/G9_pLeft2.png", cw, ch);
-        pRight = scale("images/G9_pRight.png", cw, ch);
-        pRight1 = scale("images/G9_pRight1.png", cw, ch);
-        pRight2 = scale("images/G9_pRight2.png", cw, ch);
+        pStand = scale("images/PDs game/univ/G9_pFront.png", cw, ch);
+        pFrontW = scale("images/PDs game/univ/G9_pFront.png", cw, ch);
+        pFrontW1 = scale("images/PDs game/univ/G9_pFrontLW.png", cw, ch);
+        pFrontW2 = scale("images/PDs game/univ/G9_pFrontRW.png", cw, ch);
+        pBack = scale("images/PDs game/univ/G9_pBack.png", cw, ch);
+        pBack1 = scale("images/PDs game/univ/G9_pBack1.png", cw, ch);
+        pBack2 = scale("images/PDs game/univ/G9_pBack2.png", cw, ch);
+        pLeft = scale("images/PDs game/univ/G9_pLeft.png", cw, ch);
+        pLeft1 = scale("images/PDs game/univ/G9_pLeft1.png", cw, ch);
+        pLeft2 = scale("images/PDs game/univ/G9_pLeft2.png", cw, ch);
+        pRight = scale("images/PDs game/univ/G9_pRight.png", cw, ch);
+        pRight1 = scale("images/PDs game/univ/G9_pRight1.png", cw, ch);
+        pRight2 = scale("images/PDs game/univ/G9_pRight2.png", cw, ch);
         
-        grandma = scale("images/G9_grammy.png", tw, th);
-        grandpa = scale("images/G9_grandpa.png", tw, th);
+        grandma = scale("images/PDs game/map2/grammy.png", tw, th);
+        grandpa = scale("images/PDs game/map2/grandpa.png", tw, th);
 
+        // playMusic("dungeon9.wav");
         mapLayout = new int[]{
             1,0,0,0,1,1,1,0,0,0,0,
             0,0,0,0,1,1,1,0,0,0,0,
@@ -92,24 +111,39 @@ public class G9_Room2_PD6 implements KeyListener {
             1,0,0,0,0,0,0,0,0,0,0,
             1,0,0,0,0,0,0,0,0,0,0,
             1,0,1,1,1,1,1,1,1,1,1,
-            1,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,1,0,1,1,1,0,0,1,
+            2,0,0,0,0,0,0,0,0,0,1,
+            2,0,0,1,1,1,1,1,0,0,1,
             1,1,1,1,0,0,1,1,1,0,1,
             1,1,1,0,0,0,0,0,0,0,1,
             1,1,1,1,1,1,1,1,1,1,1,
         };
         
-        mapLayout[75] = 0;
-        mapLayout[85] = 0;
-
         gridSlots = new JLabel[mapW * mapH];
         for (int i = 0; i < gridSlots.length; i++) {
             gridSlots[i] = new JLabel();
             gridSlots[i].setHorizontalAlignment(JLabel.CENTER);
             gridSlots[i].setVerticalAlignment(JLabel.CENTER);
         }
+        loadSaveData();
     }
 
+    private void playMusic(String location) {
+        try {
+            File musicPath = new File(location);
+            if (musicPath.exists()) {
+                AudioInputStream audioInput = AudioSystem.getAudioInputStream(musicPath);
+                Clip clip = AudioSystem.getClip();
+                clip.open(audioInput);
+                clip.start();
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+            } else {
+                System.out.println("Can't find audio file: " + location);
+            }
+        } catch(Exception e) {
+            System.out.println("Error playing music: " + e);
+        }
+    }
+    
     private void renderEntities() {
         for (int i = 0; i < gridSlots.length; i++) {
             if (i == characterPosition) {
@@ -139,10 +173,19 @@ public class G9_Room2_PD6 implements KeyListener {
         case "left":  if (characterPosition % mapW != 0) targetPos = characterPosition - 1; break;
         case "right": if ((characterPosition + 1) % mapW != 0) targetPos = characterPosition + 1; break;
     }
+    
+    
 
     // 1. Trash Pickup
     for (int i = 0; i < mapTrash.length; i++) {
         if (characterPosition == mapTrash[i] && mapTrash[i] != -1) {
+            // Block pickup if grandma hasn't been spoken to
+            if (!talkedGrandma) {
+                // ADDED STYLE CHANGE HERE to match the image provided
+                JOptionPane.showMessageDialog(frame, "Invalid. Interact with Grandma first.", "Message", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            
             if (itemsHeld == 0) {
                 inv[0] = mapTrash[i];
                 itemsHeld = 1;
@@ -156,24 +199,14 @@ public class G9_Room2_PD6 implements KeyListener {
 
     // 2. Grandma
     if (targetPos == grandmaPos) {
-        String[] lines;
-        // Check if total trash has been cleared
-        if (allTrashRemoved()) {
-            lines = new String[]{
-                "HMPH..",
-                "YOU ACTUALLY MANAGED TO CLEAN EVERYTHING.",
-                "HERE, TAKE THIS.",
-                "IT’S A GIFT. OR A PIECE OF JUNK.",
-                "NOW GET OUT OF HERE BEFORE I CHANGE MY MIND."
-            };
-        } else {
-            lines = new String[]{
-                "LISTEN CAREFULLY KID.",
-                "RED BIN = NONBIO | GREEN BIN = BIO | BLUE BIN = RECYCLABLES",
-                "IF YOU MESS UP YOU'LL HEAR FROM ME. ALSO..",
-                "IF YOU FIND SOMEONE AROUND MY AGE HERE.. LET ME KNOW. THAT GUY'S A PAIN TO DEAL WITH...",
-            };
-        }
+        talkedGrandma = true; 
+        saveProgress();
+        String[] lines = {
+            "LISTEN CAREFULLY KID.",
+            "RED BIN = NONBIO | GREEN BIN = BIO | BLUE BIN = RECYCLABLES",
+            "IF YOU MESS UP YOU'LL HEAR FROM ME. ALSO..",
+            "IF YOU FIND SOMEONE AROUND MY AGE HERE.. LET ME KNOW. THAT GUY'S A PAIN TO DEAL WITH...",
+        };
         SwingUtilities.invokeLater(() -> dialog.show(layeredPane, lines, null, null, mapW, mapH));
         return;
     }
@@ -204,6 +237,111 @@ public class G9_Room2_PD6 implements KeyListener {
         return true;
     }
     
+    private void setBlackOverlay(boolean visible) {
+    if (blackOverlay != null) {
+        blackOverlay.setVisible(visible);
+        layeredPane.revalidate();
+        layeredPane.repaint();
+    }
+}
+    public void playCutscene(boolean objComplete) {
+        if (!objComplete || battleTriggered) return;
+        battleTriggered = true;
+        setBlackOverlay(true);
+        cutscene.setVisible(true); // show intro cutscene FIRST
+
+        new javax.swing.Timer(8000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ((Timer) e.getSource()).stop();
+                cutscene.setVisible(false);
+                setBlackOverlay(false);
+                // THEN start the battle after cutscene ends
+                SwingUtilities.invokeLater(() ->
+                    battle.start(frame, "images/PDs game/map2/minibossBG.png", "Bin Izharfed")
+                );
+
+                // Poll until the battle ends, then branch on win vs. loss
+                new javax.swing.Timer(500, new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent ev) {
+                        if (!Battle.paused) {
+                            ((Timer) ev.getSource()).stop();
+
+                            if (battle.hp > 0) {
+                                // ── Victory path ──────────────────────────────
+                                miniDefeat = true;
+                                SaveSystem.markDefeated("Bin Izharfed");
+                                saveProgress();
+                                ImageIcon victoryImg = new ImageIcon("images/PDs game/map2/cutscn2.png");
+                                cutscene.setIcon(new ImageIcon(victoryImg.getImage()
+                                    .getScaledInstance(cutW, cutH, Image.SCALE_DEFAULT)));
+                                setBlackOverlay(true); 
+                                cutscene.setVisible(true);
+                                new javax.swing.Timer(8000, end -> {
+                                    cutscene.setVisible(false);
+                                    setBlackOverlay(false); 
+                                    ((Timer) end.getSource()).stop();
+                                }).start();
+                            } else {
+                                battleTriggered = false;
+                                battle = new Battle();                                  
+                                direction = "right";
+                                renderEntities();
+                            }
+                        }
+                    }
+                }).start();
+            }
+        }).start();
+    }
+    
+    private void loadSaveData() {
+        SaveSystem.SaveData save = SaveSystem.loadGame("G9_Room2_PD6");
+
+        
+        if (save.timeSeconds <= 0) {
+            SaveSystem.SaveData pd4Save = SaveSystem.loadGame("G9_Room1_PD4");
+            SaveSystem.startTimer(pd4Save.timeSeconds);
+        } else {
+            SaveSystem.startTimer(save.timeSeconds);
+        }
+
+        // load flags
+        trashCleared = 0;
+        if (save.flags != null) {
+            for (String flag : save.flags) {
+                if (flag.startsWith("cleared_")) {
+                    int idx = Integer.parseInt(flag.replace("cleared_", ""));
+                    if (idx >= 0 && idx < cleared.length) cleared[idx] = true;
+                    trashCleared++;
+                }
+            }
+        }
+        objComplete = save.hasFlag("objective_complete");
+        finalDialog = save.hasFlag("final_dialog_triggered");
+        talkedGrandma = save.hasFlag("talked_to_grandma");
+        miniDefeat = save.hasFlag("battle_won");
+        rewardGiven = save.hasFlag("reward_given");
+        
+    }
+    
+    public void saveProgress() {
+        SaveSystem.SaveData.Builder builder = new SaveSystem.SaveData.Builder("G9_Room2_PD6")
+                .time(SaveSystem.getTotalSeconds())
+                .flag(objComplete ? "objective_complete" : null)
+                .flag(finalDialog ? "final_dialog_triggered" : null)
+                .flag(talkedGrandma ? "talked_to_grandma" : null)
+                .flag(miniDefeat ? "battle_won" : null)
+                .flag(rewardGiven ? "reward_given" : null)
+                .battles(SaveSystem.getDefeatedBosses());
+        for (int i = 0; i < cleared.length; i++) {
+            if (cleared[i]) builder.flag("cleared_" + i);
+        }
+        SaveSystem.saveGame(builder);
+    }
+   
+    
     private ImageIcon scale(String path, int w, int h) {
         ImageIcon icon = new ImageIcon(path);
         return new ImageIcon(icon.getImage().getScaledInstance(w, h, Image.SCALE_DEFAULT));
@@ -222,8 +360,9 @@ public class G9_Room2_PD6 implements KeyListener {
         if (direction.equals("right")) return animFrame == 0 ? pRight   : animFrame == 1 ? pRight1   : pRight2;
         return pStand;
     }
-
+    
     public void setFrame() {
+        cutscene.setVisible(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
         layeredPane.setPreferredSize(new Dimension(frW, frH));
@@ -242,9 +381,20 @@ public class G9_Room2_PD6 implements KeyListener {
             charPanel.add(gridSlots[i], new Rectangle(i % mapW, i / mapW, 1, 1));
         }
 
+        // --- Black overlay: covers the whole map, sits above charPanel but below cutscene ---
+        blackOverlay = new JPanel();
+        blackOverlay.setBackground(Color.BLACK);
+        blackOverlay.setOpaque(true);
+        blackOverlay.setBounds(0, 0, frW, frH);
+        blackOverlay.setVisible(false);
+        layeredPane.add(blackOverlay, new Rectangle(0, 0, mapW, mapH));
+        layeredPane.setLayer(blackOverlay, 1); // Layer 1: above map/chars
+
+        layeredPane.add(cutscene, new Rectangle(1, 1, 9, 9));
+        layeredPane.setLayer(cutscene, 2); // Layer 2: above the black overlay
         layeredPane.add(charPanel, new Rectangle(0, 0, mapW, mapH));
         layeredPane.setLayer(charPanel, Integer.valueOf(1));
-
+      
         frame.add(layeredPane);
         frame.pack();
         frame.setLocationRelativeTo(null);
@@ -254,7 +404,13 @@ public class G9_Room2_PD6 implements KeyListener {
         frame.setVisible(true);
         frame.requestFocusInWindow();
     }
-
+    
+    public static void main(String[] args){
+        G9_Room2_PD6 g=new G9_Room2_PD6();
+        g.setFrame();
+        
+    }
+    
     @Override
     public void keyPressed(KeyEvent e) {
         if (dialog.isVisible()) return;
@@ -266,8 +422,16 @@ public class G9_Room2_PD6 implements KeyListener {
             return; 
         }
 
-        if (key == KeyEvent.VK_RIGHT) { direction = "right"; if ((characterPosition + 1) % mapW != 0) nextPos++; }
-        else if (key == KeyEvent.VK_LEFT) { direction = "left"; if (characterPosition % mapW != 0) nextPos--; }
+        if (key == KeyEvent.VK_RIGHT) {
+            direction = "right";
+            if ((characterPosition + 1) % mapW == 0) {
+                // Right edge: trigger cutscene/battle if objective done
+                if (objComplete && !battleTriggered) {
+                    playCutscene(true);
+                }
+                return;
+            } else nextPos++;
+        } else if (key == KeyEvent.VK_LEFT) { direction = "left"; if (characterPosition % mapW != 0) nextPos--; }
         else if (key == KeyEvent.VK_DOWN) { direction = "down"; if (characterPosition + mapW < 121) nextPos += mapW; }
         else if (key == KeyEvent.VK_UP) { direction = "up"; if (characterPosition - mapW >= 0) nextPos -= mapW; }
 
@@ -277,7 +441,7 @@ public class G9_Room2_PD6 implements KeyListener {
             renderEntities();
         }
     }
-
+    
     @Override public void keyReleased(KeyEvent e) { animFrame = 0; renderEntities(); }
     @Override public void keyTyped(KeyEvent e) {}
 }
