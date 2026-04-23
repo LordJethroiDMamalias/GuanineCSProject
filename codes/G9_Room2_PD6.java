@@ -71,9 +71,9 @@ public class G9_Room2_PD6 implements KeyListener {
         layeredPane = new JLayeredPane();
         cleared = new boolean[121]; 
         
-        ImageIcon mapImg = new ImageIcon("images/PDs game/map2/map2_updated.png");
+        ImageIcon mapImg = new ImageIcon("images/PDs game/map2/G9_map2_updated.png");
         background = new JLabel(new ImageIcon(mapImg.getImage().getScaledInstance(frW, frH, Image.SCALE_DEFAULT)));
-        ImageIcon panelImg = new ImageIcon("images/PDs game/map2/cutscn1.png");
+        ImageIcon panelImg = new ImageIcon("images/PDs game/map2/G9_cutscn1.png");
         cutscene = new JLabel(new ImageIcon(panelImg.getImage().getScaledInstance(cutW, cutH, Image.SCALE_DEFAULT)));
         
         if (mapImg.getImageLoadStatus() == MediaTracker.COMPLETE) {
@@ -100,8 +100,8 @@ public class G9_Room2_PD6 implements KeyListener {
         pRight1 = scale("images/PDs game/univ/G9_pRight1.png", cw, ch);
         pRight2 = scale("images/PDs game/univ/G9_pRight2.png", cw, ch);
         
-        grandma = scale("images/PDs game/map2/grammy.png", tw, th);
-        grandpa = scale("images/PDs game/map2/grandpa.png", tw, th);
+        grandma = scale("images/PDs game/map2/G9_grammy.png", tw, th);
+        grandpa = scale("images/PDs game/map2/G9_grandpa.png", tw, th);
 
         // playMusic("dungeon9.wav");
         mapLayout = new int[]{
@@ -160,7 +160,7 @@ public class G9_Room2_PD6 implements KeyListener {
                         break;
                     }
                 }
-                gridSlots[i].setIcon(trashPresent ? scale("images/PDs game/univ/trash.png", 30, 30) : null);
+                gridSlots[i].setIcon(trashPresent ? scale("images/PDs game/univ/G9_trash.png", 30, 30) : null);
             }
         }
     }
@@ -258,7 +258,7 @@ public class G9_Room2_PD6 implements KeyListener {
                 setBlackOverlay(false);
                 // THEN start the battle after cutscene ends
                 SwingUtilities.invokeLater(() ->
-                    battle.start(frame, "images/PDs game/map2/minibossBG.png", "Bin Izharfed")
+                    battle.start(frame, "images/PDs game/map2/G9_minibossBG.png", "Bin Izharfed")
                 );
 
                 // Poll until the battle ends, then branch on win vs. loss
@@ -273,7 +273,7 @@ public class G9_Room2_PD6 implements KeyListener {
                                 miniDefeat = true;
                                 SaveSystem.markDefeated("Bin Izharfed");
                                 saveProgress();
-                                ImageIcon victoryImg = new ImageIcon("images/PDs game/map2/cutscn2.png");
+                                ImageIcon victoryImg = new ImageIcon("images/PDs game/map2/G9_cutscn2.png");
                                 cutscene.setIcon(new ImageIcon(victoryImg.getImage()
                                     .getScaledInstance(cutW, cutH, Image.SCALE_DEFAULT)));
                                 setBlackOverlay(true); 
