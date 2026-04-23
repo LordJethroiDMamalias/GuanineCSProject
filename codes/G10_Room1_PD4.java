@@ -1,6 +1,6 @@
 package bossroom;
 
-//it doesnt work fully pa pero na implement ko na ang dialogue and battle system imma fix tmrw
+//added bg image in the fight scene but still has major bugs like the stats are not showing, you cant move after defeating Don Malek
 
 import codes.Battle;
 import codes.SaveSystem;
