@@ -8,36 +8,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 public class G2_Room1_PD4 implements KeyListener, ActionListener {
-
-    // =========================================================================
-    // MusicPlayer — singleton that survives room transitions.
-    //
-    // Usage from anywhere in the codes package:
-    //   G2_Room1_PD4.MusicPlayer.start("music/Main-boss.wav");
-    //   G2_Room1_PD4.MusicPlayer.stop();
-    //
-    // Calling start() while already playing is a no-op (music never restarts).
-    // =========================================================================
     public static final class MusicPlayer {
 
-        private static Clip     clip     = null;
-        private static String   current  = null;   // path of the track in use
+        private static Clip   clip    = null;
+        private static String current = null;  // path of the track currently open
 
-        private MusicPlayer() {}   // static-only utility class
-
-        /**
-         * Starts looping the given WAV file.
-         * Safe to call on every room load — does nothing if the same track
-         * is already playing.
-         *
-         * @param path  Relative or absolute path to a .wav file.
-         */
+        private MusicPlayer() {}  
         public static synchronized void start(String path) {
             // Already playing this exact track — do nothing
             if (clip != null && clip.isRunning() && path.equals(current)) return;
 
-            // Different track requested, or first call — (re)open it
-            stop();
+            stop();  // clean up any previous clip before opening a new one
             try {
                 File file = new File(path);
                 if (!file.exists()) {
@@ -48,24 +29,20 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
                 AudioInputStream raw = AudioSystem.getAudioInputStream(file);
                 AudioFormat      src = raw.getFormat();
 
-                // Java's Clip only guarantees support for 16-bit PCM.
-                // If the file is 24-bit (or any other unsupported depth) we
-                // convert it to 16-bit signed PCM at the same sample rate and
-                // channel count before handing it to the Clip.
                 AudioInputStream stream;
                 if (src.getSampleSizeInBits() != 16
                         || src.getEncoding() != AudioFormat.Encoding.PCM_SIGNED) {
                     AudioFormat target = new AudioFormat(
                             AudioFormat.Encoding.PCM_SIGNED,
-                            src.getSampleRate(),          // keep original rate (e.g. 44100 Hz)
-                            16,                           // force 16-bit
-                            src.getChannels(),            // keep stereo/mono
-                            src.getChannels() * 2,        // frame size = channels × 2 bytes
-                            src.getSampleRate(),          // frame rate == sample rate for PCM
-                            false);                       // little-endian
+                            src.getSampleRate(),      // keep original rate (e.g. 44100 Hz)
+                            16,                       // force 16-bit
+                            src.getChannels(),        // keep stereo/mono
+                            src.getChannels() * 2,    // frame size = channels x 2 bytes
+                            src.getSampleRate(),      // frame rate == sample rate for PCM
+                            false);                   // little-endian
                     stream = AudioSystem.getAudioInputStream(target, raw);
                     System.out.println("[MusicPlayer] Converted "
-                            + src.getSampleSizeInBits() + "-bit → 16-bit PCM");
+                            + src.getSampleSizeInBits() + "-bit to 16-bit PCM");
                 } else {
                     stream = raw;
                 }
@@ -81,10 +58,6 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
             }
         }
 
-        /**
-         * Stops and releases the current clip.
-         * Safe to call even if nothing is playing.
-         */
         public static synchronized void stop() {
             if (clip != null) {
                 clip.stop();
@@ -99,6 +72,7 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
             return clip != null && clip.isRunning();
         }
     }
+
     JFrame frame;
     JLayeredPane layers;
     
@@ -129,99 +103,98 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
     Dialog dialog = new Dialog();
 
     public G2_Room1_PD4() {
+        frame = new JFrame("Makeup Room");
+        frameWidth  = mapWidth  * tileSize;
+        frameHeight = mapHeight * tileSize;
+        mapLayout = new int[]{
+            1,1,1,1,1,1,1,1,1,1,1,
+            1,1,10,9,10,1,1,1,3,1,1,
+            1,0,0,0,0,0,1,0,0,0,1,
+            1,0,0,8,0,0,0,0,0,0,4,
+            1,0,0,7,0,0,1,0,0,0,1,
+            1,0,0,0,0,0,1,0,0,0,1,
+            1,5,0,6,0,5,1,0,0,0,1,
+            1,1,1,1,1,1,1,0,0,0,1,
+            1,0,0,0,0,0,0,0,0,0,1,
+            1,0,0,0,0,0,0,0,0,0,1,
+            1,0,0,0,0,0,0,0,2,0,1,
+        };
+
+        characterPlace = new int[]{
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,2,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,1,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,
+        };
+
+        tiles = new JLabel[mapHeight * mapWidth];
+        for (int i = 0; i < tiles.length; i++) {
+            if (mapLayout[i] == 0)
+                tiles[i] = new JLabel();
+        }
+
+        // ── Image loading — a missing file is non-fatal ───────────────────────
         try {
-            frame = new JFrame("Makeup Room");
-            frameWidth = mapWidth * tileSize;
-            frameHeight = mapHeight * tileSize;
-            
-            backgroundImage = new ImageIcon("images/test.png");
+            backgroundImage = new ImageIcon("images/G2_RoomMap.png");
             if (backgroundImage.getImageLoadStatus() == MediaTracker.ERRORED)
                 throw new FileNotFoundException(
-                        "Background image not found at images/G2_LivingRoomMap.png");
+                        "Background image not found at images/G2_RoomMap.png");
             backgroundImage = new ImageIcon(backgroundImage.getImage()
                     .getScaledInstance((frameWidth / mapWidth) * 11,
                                        (frameHeight / mapHeight) * 11,
                                        Image.SCALE_DEFAULT));
-
-            for (int i = 0; i < 4; i++) {
-                pUp[i]    = scale("images/up_"    + (i + 1) + ".png");
-                pDown[i]  = scale("images/down_"  + (i + 1) + ".png");
-                pLeft[i]  = scale("images/left_"  + (i + 1) + ".png");
-                pRight[i] = scale("images/right_" + (i + 1) + ".png");
-            }
-            
-            backgroundLabel = new JLabel(backgroundImage);
-
-            G2_pinkBrick = scale("images/G2_pinkBrick.png");
-            G2_door1 = scale("images/G2_door.png");
-            G2_pinkFloor = scale("images/G2_pinkFloor.png");
-            G2_pinkPath = scale("images/G2_pinkPath.png");
-            G2_NPCIcon = scale("images/G2_MakeupNPC.png");
-            G2_NPCIcon2 = scale("images/G2_MakeupNPC.png"); 
-            
-            G2_makeupShelf = scale("images/G2_makeupShelf.png");
-            G2_pinkCouch = scale("images/G2_pinkCouch.png");
-            G2_makeupMirror1 = scale("images/G2_makeupMirror1.png");
-            G2_makeupMirror2 = scale("images/G2_makeupMirror2.png");
-            G2_pinkGown = scale("images/G2_pinkGown.png");
-            G2_pinkDress = scale("images/G2_pinkDress.png");
-            G2_makeupDesk = scale("images/G2_makeupDesk.png");
-            G2_pinkRug = scale("images/G2_pinkRug.png");
-
-            characterPlace = new int[]{
-                0,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,2,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,
-                0,1,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,
-            };
-
-            character = new JLabel[mapWidth * mapHeight];
-            for (int i = 0; i < character.length; i++) {
-                character[i] = new JLabel();
-                character[i].setHorizontalAlignment(JLabel.CENTER);
-                if (characterPlace[i] == 1) {
-                    characterPosition = i;
-                    character[i].setIcon(pDown[0]); // start facing down
-                } else if (characterPlace[i] == 2) {
-                    character[i].setIcon(G2_NPCIcon);
-                    NPCLocation = i;
-                }
-            }
-
-            mapLayout = new int[]{
-                1,1,1,1,1,1,1,1,1,1,1,
-                1,1,10,9,10,1,1,1,3,1,1,
-                1,0,0,0,0,0,1,0,0,0,1,
-                1,0,0,8,0,0,0,0,0,0,4,
-                1,0,0,7,0,0,1,0,0,0,1,
-                1,0,0,0,0,0,1,0,0,0,1,
-                1,5,0,6,0,5,1,0,0,0,1,
-                1,1,1,1,1,1,1,0,0,0,1,
-                1,0,0,0,0,0,0,0,0,0,1,
-                1,0,0,0,0,0,0,0,0,0,1,
-                1,0,0,0,0,0,0,0,2,0,1,
-
-            };
-            
-            tiles = new JLabel[mapHeight * mapWidth];
-            for (int i = 0; i < tiles.length; i++) {
-                if (mapLayout[i] == 0)
-                    tiles[i] = new JLabel();
-            }
         } catch (Exception e) {
-            System.err.println("Critical failure during Game Room initialization: " + e.getMessage());
-        } finally {
-            System.out.println("Room memory allocation sequence finished.");
+            System.err.println("Warning: Background image failed — " + e.getMessage());
+            backgroundImage = new ImageIcon(
+                    new java.awt.image.BufferedImage(frameWidth, frameHeight,
+                            java.awt.image.BufferedImage.TYPE_INT_ARGB));
+        }
+        backgroundLabel = new JLabel(backgroundImage);
+
+        // Sprites — scale() already handles missing files gracefully
+        for (int i = 0; i < 4; i++) {
+            pUp[i]    = scale("images/up_"    + (i + 1) + ".png");
+            pDown[i]  = scale("images/down_"  + (i + 1) + ".png");
+            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png");
+            pRight[i] = scale("images/right_" + (i + 1) + ".png");
         }
 
-        // Load save data after all fields are ready
+        G2_pinkBrick     = scale("images/G2_pinkBrick.png");
+        G2_door1         = scale("images/G2_door.png");
+        G2_pinkFloor     = scale("images/G2_pinkFloor.png");
+        G2_pinkPath      = scale("images/G2_pinkPath.png");
+        G2_NPCIcon       = scale("images/G2_MakeupNPC.png");
+        G2_NPCIcon2      = scale("images/G2_MakeupNPC.png");
+        G2_makeupShelf   = scale("images/G2_makeupShelf.png");
+        G2_pinkCouch     = scale("images/G2_pinkCouch.png");
+        G2_makeupMirror1 = scale("images/G2_makeupMirror1.png");
+        G2_makeupMirror2 = scale("images/G2_makeupMirror2.png");
+        G2_pinkGown      = scale("images/G2_pinkGown.png");
+        G2_pinkDress     = scale("images/G2_pinkDress.png");
+        G2_makeupDesk    = scale("images/G2_makeupDesk.png");
+        G2_pinkRug       = scale("images/G2_pinkRug.png");
+
+        character = new JLabel[mapWidth * mapHeight];
+        for (int i = 0; i < character.length; i++) {
+            character[i] = new JLabel();
+            character[i].setHorizontalAlignment(JLabel.CENTER);
+            if (characterPlace[i] == 1) {
+                characterPosition = i;
+                character[i].setIcon(pDown[0]);
+            } else if (characterPlace[i] == 2) {
+                character[i].setIcon(G2_NPCIcon);
+                NPCLocation = i;
+            }
+        }
+
+        System.out.println("Room memory allocation sequence finished.");
         loadSaveData();
     }
 
@@ -232,8 +205,6 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
 
         quizCompleted = save.hasFlag("quiz_completed");
         hasKey        = save.hasFlag("has_key");
-
-        // If quiz was completed on a previous session, remove NPC and open door behind NPC (index 11 at tile 39)
         if (save.hasFlag("quiz_completed")) {
             mapLayout[39] = 0;  // door behind NPC becomes walkable
             NPCLocation = -1;   // NPC is gone so player can walk through
@@ -266,8 +237,6 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
             return new ImageIcon(); 
         }
     }
-
-    // ── Scale helper for animated player sprites ─────────────────────────────
     private ImageIcon scalePlayer(String path) {
         try {
             ImageIcon icon = new ImageIcon(path);
@@ -280,7 +249,6 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
             return new ImageIcon();
         }
     }
-    // ────────────────────────────────────────────────────────────────────────
 
     public void setFrame() {
         try {
@@ -614,8 +582,6 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
     @Override public void actionPerformed(ActionEvent e) {}
 
     public static void main(String[] args) {
-        // Start background music once here — it persists for the entire session.
-        // Room transitions never call stop(), so the track plays seamlessly.
         MusicPlayer.start("music/Green Room.wav");
 
         SwingUtilities.invokeLater(() -> {
