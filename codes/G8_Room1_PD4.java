@@ -1,14 +1,3 @@
-/*
-Created by: 
-John Felippe D. Samonte
-Angelika Margaret Dumogho
-James Ryan Rios
-10-Guanine
-
-Using the assistance of Gemini AI
-
-*/
-
 package codes;
 
 import javax.swing.*;
@@ -17,67 +6,67 @@ import java.awt.event.*;
 import java.util.concurrent.*;
 
 public class G8_Room1_PD4 implements KeyListener {
-    
+
     JFrame frame;
-    JLayeredPane layeredPane; // Required for Dialog compatibility
-    Dialog dialog = new Dialog(); 
-    
+    JLayeredPane layeredPane;
+    G8_Dialog dialog = new G8_Dialog(); 
+
     JLabel[] tiles;
-    JLabel[] characterLabels; // Renamed for clarity
-    
+    JLabel[] characterLabels; 
+
     int mapWidth = 11;
     int mapHeight = 11;
     int frameWidth = 660;
     int frameHeight = 660;
     int[] mapLayout;
     int characterPosition;
-    
+
     ImageIcon grass1, Fence, TRFence, TLFence, SFence, BRFence, BLFence;
     ImageIcon pUp1, pDown1, pLeft1, pRight1;
     ImageIcon grassRed, bombIcon;
-    
+
     boolean[] isRedTile;
     boolean[] hasBomb;
-    
+    ScheduledExecutorService bombScheduler;
+
     public G8_Room1_PD4() {
-        try {
-            frame = new JFrame("Bomber - Room 1");
-            int tileSizeW = frameWidth / mapWidth;
-            int tileSizeH = frameHeight / mapHeight;
+        frame = new JFrame("Bomber - Room 1");
+        int cellW = frameWidth / mapWidth;
+        int cellH = frameHeight / mapHeight;
 
-            isRedTile = new boolean[mapWidth * mapHeight];
-            hasBomb = new boolean[mapWidth * mapHeight];
-            
-            // Safe Image Loading
-            grass1 = loadIcon("images/G8_grass1.png", tileSizeW, tileSizeH);
-            grassRed = loadIcon("images/G8_grass1red.png", tileSizeW, tileSizeH);
-            bombIcon = loadIcon("images/G8_bomb.png", tileSizeW, tileSizeH);
-            Fence = loadIcon("images/G8_TFence.png", tileSizeW, tileSizeH);
-            TRFence = loadIcon("images/G8_TRFence.png", tileSizeW, tileSizeH);
-            TLFence = loadIcon("images/G8_TLFence.png", tileSizeW, tileSizeH);
-            SFence = loadIcon("images/G8_SFence.png", tileSizeW, tileSizeH);
-            BRFence = loadIcon("images/G8_BRFence.png", tileSizeW, tileSizeH);
-            BLFence = loadIcon("images/G8_BLFence.png", tileSizeW, tileSizeH);
-            pDown1 = loadIcon("images/G8_down1.png", tileSizeW, tileSizeH);
-            pUp1 = loadIcon("images/G8_up1.png", tileSizeW, tileSizeH);
-            pLeft1 = loadIcon("images/G8_left1.png", tileSizeW, tileSizeH);
-            pRight1 = loadIcon("images/G8_right1.png", tileSizeW, tileSizeH);
+        isRedTile = new boolean[mapWidth * mapHeight];
+        hasBomb = new boolean[mapWidth * mapHeight];
+        characterLabels = new JLabel[mapWidth * mapHeight];
+        tiles = new JLabel[mapWidth * mapHeight];
 
-            setupMap();
-            startBombLogic();
+        grass1 = loadAndScale("images/G8_grass1.png", cellW, cellH);
+        grassRed = loadAndScale("images/G8_grass1red.png", cellW, cellH);
+        bombIcon = loadAndScale("images/G8_bomb.png", cellW, cellH);
+        Fence = loadAndScale("images/G8_TFence.png", cellW, cellH);
+        TRFence = loadAndScale("images/G8_TRFence.png", cellW, cellH);
+        TLFence = loadAndScale("images/G8_TLFence.png", cellW, cellH);
+        SFence = loadAndScale("images/G8_SFence.png", cellW, cellH);
+        BRFence = loadAndScale("images/G8_BRFence.png", cellW, cellH);
+        BLFence = loadAndScale("images/G8_BLFence.png", cellW, cellH);
+        
+        pDown1 = loadAndScale("images/G8_down1.png", cellW, cellH);
+        pUp1 = loadAndScale("images/G8_up1.png", cellW, cellH);
+        pLeft1 = loadAndScale("images/G8_left1.png", cellW, cellH);
+        pRight1 = loadAndScale("images/G8_right1.png", cellW, cellH);
 
-        } catch (Exception e) {
-            System.err.println("Critical failure in Constructor: " + e.getMessage());
-        }
+        setupMap();
     }
 
-    private ImageIcon loadIcon(String path, int w, int h) {
+    private ImageIcon loadAndScale(String path, int w, int h) {
         try {
-            return new ImageIcon(new ImageIcon(path).getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH));
-        } catch (Exception e) {
-            System.err.println("Missing asset: " + path);
-            return null; 
-        }
+            ImageIcon icon = new ImageIcon(path);
+            if (icon.getIconWidth() == -1) {
+                if (path.contains("G8_")) icon = new ImageIcon(path.replace("G8_", ""));
+                else icon = new ImageIcon(path.replace("images/", "images/G8_"));
+            }
+            if (icon.getIconWidth() == -1) return null;
+            return new ImageIcon(icon.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH));
+        } catch (Exception e) { return null; }
     }
 
     private void setupMap() {
@@ -95,12 +84,9 @@ public class G8_Room1_PD4 implements KeyListener {
             5,1,1,1,1,1,1,1,1,1,6
         };
 
-        tiles = new JLabel[mapWidth * mapHeight];
-        characterLabels = new JLabel[mapWidth * mapHeight];
-        characterPosition = 48; // Center approx
-
-        for (int i = 0; i < tiles.length; i++) {
+        for (int i = 0; i < mapLayout.length; i++) {
             characterLabels[i] = new JLabel();
+            characterLabels[i].setHorizontalAlignment(JLabel.CENTER);
             switch (mapLayout[i]) {
                 case 0 -> tiles[i] = new JLabel(grass1);
                 case 1 -> tiles[i] = new JLabel(Fence);
@@ -112,132 +98,112 @@ public class G8_Room1_PD4 implements KeyListener {
                 default -> tiles[i] = new JLabel();
             }
         }
+        characterPosition = 60; 
         characterLabels[characterPosition].setIcon(pDown1);
     }
 
     public void setFrame() {
-        try {
-            layeredPane = new JLayeredPane();
-            layeredPane.setPreferredSize(new Dimension(frameWidth, frameHeight));
+        layeredPane = new JLayeredPane();
+        layeredPane.setPreferredSize(new Dimension(frameWidth, frameHeight));
 
-            JPanel tilePanel = new JPanel(new GridLayout(mapHeight, mapWidth));
-            tilePanel.setBounds(0, 0, frameWidth, frameHeight);
-            for (JLabel t : tiles) tilePanel.add(t);
+        JPanel tilePanel = new JPanel(new GridLayout(mapHeight, mapWidth));
+        tilePanel.setBounds(0, 0, frameWidth, frameHeight);
+        for (JLabel t : tiles) tilePanel.add(t);
 
-            JPanel charPanel = new JPanel(new GridLayout(mapHeight, mapWidth));
-            charPanel.setBounds(0, 0, frameWidth, frameHeight);
-            charPanel.setOpaque(false);
-            for (JLabel c : characterLabels) charPanel.add(c);
+        JPanel charPanel = new JPanel(new GridLayout(mapHeight, mapWidth));
+        charPanel.setBounds(0, 0, frameWidth, frameHeight);
+        charPanel.setOpaque(false);
+        for (JLabel c : characterLabels) charPanel.add(c);
 
-            layeredPane.add(tilePanel, JLayeredPane.DEFAULT_LAYER);
-            layeredPane.add(charPanel, JLayeredPane.PALETTE_LAYER);
+        layeredPane.add(tilePanel, Integer.valueOf(0));
+        layeredPane.add(charPanel, Integer.valueOf(1));
 
-            frame.add(layeredPane);
-            dialog.addKey(frame); // Dialog integration
-            frame.addKeyListener(this);
+        frame.add(layeredPane);
+        frame.setFocusable(true);
+        frame.addKeyListener(this);
+        dialog.addKey(frame); 
+        
+        frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setResizable(false);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+        
+        String[] intro = {"Welcome!", "Survive the bombs for 30 seconds!", "Press SPACE to start!"};
+        dialog.show(layeredPane, intro, null, null, mapWidth, mapHeight, () -> {
+            startBombLogic();
+            startWinTimer();
+        });
 
-            frame.setSize(frameWidth, frameHeight);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setResizable(false);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-
-            // Intro Dialog
-            String[] intro = {"Welcome to the Bomber Room!", "Watch the tiles. If they turn red, a bomb is coming!", "Move with Arrow Keys."};
-            dialog.show(layeredPane, intro, null, null, mapWidth, mapHeight);
-
-        } catch (Exception e) {
-            System.err.println("UI SetFrame Error: " + e.getMessage());
-        }
+        SwingUtilities.invokeLater(() -> frame.requestFocusInWindow());
     }
 
     private void moveCharacter(int target, ImageIcon icon) {
-        try {
-            if (dialog.isVisible()) return; // Block move during dialog
-            
-            if (target < 0 || target >= mapWidth * mapHeight) return;
-            if (mapLayout[target] != 0) return;
+        if (dialog.isVisible()) return; 
+        if (target < 0 || target >= mapWidth * mapHeight || mapLayout[target] != 0) return; 
 
-            characterLabels[characterPosition].setIcon(null);
-            characterLabels[target].setIcon(icon);
-            characterPosition = target;
+        characterLabels[characterPosition].setIcon(null);
+        characterLabels[target].setIcon(icon);
+        characterPosition = target;
 
-            if (hasBomb[characterPosition]) {
-                String[] deathText = {"BOOM!", "You stepped on a bomb...", "Game Over."};
-                dialog.show(layeredPane, deathText, null, new Runnable[]{() -> System.exit(0)}, mapWidth, mapHeight);
-            }
-        } catch (Exception e) {
-            System.err.println("Movement error: " + e.getMessage());
+        if (hasBomb[characterPosition]) {
+            if (bombScheduler != null) bombScheduler.shutdownNow();
+            dialog.show(layeredPane, new String[]{"BOOM!", "Game Over!"}, null, new Runnable[]{() -> System.exit(0)}, mapWidth, mapHeight, null);
         }
     }
 
     private void startBombLogic() {
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                if (dialog.isVisible()) return;
+        bombScheduler = Executors.newScheduledThreadPool(4);
+        bombScheduler.scheduleAtFixedRate(() -> {
+            if (dialog.isVisible()) return;
+            for(int wave = 0; wave < 3; wave++) {
+                java.util.List<Integer> valid = new java.util.ArrayList<>();
+                for (int i = 0; i < mapLayout.length; i++) 
+                    if (mapLayout[i] == 0 && !isRedTile[i] && !hasBomb[i]) valid.add(i);
+                
+                if (valid.isEmpty()) continue;
+                int idx = valid.get((int)(Math.random() * valid.size()));
+                isRedTile[idx] = true;
+                SwingUtilities.invokeLater(() -> tiles[idx].setIcon(grassRed));
 
-                int batchSize = 3; // Reduced batch size for better gameplay
-                int[] selectedIndices = new int[batchSize];
-                int count = 0;
-
-                while (count < batchSize) {
-                    int randIndex = (int) (Math.random() * mapLayout.length);
-                    if (mapLayout[randIndex] == 0 && !isRedTile[randIndex]) {
-                        isRedTile[randIndex] = true;
-                        selectedIndices[count] = randIndex;
-                        count++;
-                    }
-                }
-
-                SwingUtilities.invokeLater(() -> {
-                    for (int idx : selectedIndices) tiles[idx].setIcon(grassRed);
-                });
-
-                // Detonate after 2 seconds
                 CompletableFuture.runAsync(() -> {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(1500);
                         SwingUtilities.invokeLater(() -> {
-                            for (int idx : selectedIndices) {
-                                hasBomb[idx] = true;
-                                tiles[idx].setIcon(bombIcon);
-                                // Check if player is on the bomb at the moment of explosion
-                                if (characterPosition == idx) {
-                                    moveCharacter(idx, pDown1); 
-                                }
-                            }
+                            isRedTile[idx] = false;
+                            hasBomb[idx] = true;
+                            tiles[idx].setIcon(bombIcon);
+                            if (characterPosition == idx) moveCharacter(idx, (ImageIcon)characterLabels[idx].getIcon());
                         });
-                        
                         Thread.sleep(1000);
                         SwingUtilities.invokeLater(() -> {
-                            for (int idx : selectedIndices) {
-                                isRedTile[idx] = false;
-                                hasBomb[idx] = false;
-                                tiles[idx].setIcon(grass1);
-                            }
+                            hasBomb[idx] = false;
+                            tiles[idx].setIcon(grass1);
                         });
-                    } catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+                    } catch (Exception e) {}
                 });
-            } catch (Exception e) {
-                System.err.println("Bomb Logic Error: " + e.getMessage());
             }
-        }, 3, 4, TimeUnit.SECONDS);
+        }, 0, 1000, TimeUnit.MILLISECONDS);
+    }
+
+    private void startWinTimer() {
+        javax.swing.Timer timer = new javax.swing.Timer(30000, e -> {
+            if (bombScheduler != null) bombScheduler.shutdownNow();
+            dialog.show(layeredPane, new String[]{"VICTORY!", "You survived!"}, null, new Runnable[]{() -> System.exit(0)}, mapWidth, mapHeight, null);
+        });
+        timer.setRepeats(false);
+        timer.start();
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (dialog.isVisible()) return;
-
         int key = e.getKeyCode();
-        if (key == KeyEvent.VK_RIGHT && (characterPosition % mapWidth) < mapWidth - 1) 
-            moveCharacter(characterPosition + 1, pRight1);
-        else if (key == KeyEvent.VK_LEFT && (characterPosition % mapWidth) > 0) 
-            moveCharacter(characterPosition - 1, pLeft1);
-        else if (key == KeyEvent.VK_DOWN) 
-            moveCharacter(characterPosition + mapWidth, pDown1);
-        else if (key == KeyEvent.VK_UP) 
-            moveCharacter(characterPosition - mapWidth, pUp1);
+        int row = characterPosition / mapWidth;
+        int col = characterPosition % mapWidth;
+        if ((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_D) && col < mapWidth - 1) moveCharacter(characterPosition + 1, pRight1);
+        else if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_A) && col > 0) moveCharacter(characterPosition - 1, pLeft1);
+        else if ((key == KeyEvent.VK_DOWN || key == KeyEvent.VK_S) && row < mapHeight - 1) moveCharacter(characterPosition + mapWidth, pDown1);
+        else if ((key == KeyEvent.VK_UP || key == KeyEvent.VK_W) && row > 0) moveCharacter(characterPosition - mapWidth, pUp1);
     }
 
     @Override public void keyTyped(KeyEvent e) {}
