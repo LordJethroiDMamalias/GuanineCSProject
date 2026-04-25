@@ -8,7 +8,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 
-/*grp: ancla, badayos, sepe*/
+// grp: ancla, badayos, sepe
 
 public class G9_Room2_PD6 implements KeyListener {
     // --- UI Components ---
@@ -41,17 +41,20 @@ public class G9_Room2_PD6 implements KeyListener {
     int[] inv = new int[10]; 
     int itemsHeld = 0;      
     int[] mapTrash = {13, 37, 48, 75, 79, 85, 108, 104};
-    GameEvent trashEvent = new trashThrown();
+    GameEvent trashEvent = new G9_trashThrown();
     
     public int totalTrash = mapTrash.length;
-    private int trashCleared = 0; // Encapsulated: Now private
+    private int trashCleared = 0;
     public boolean rewardGiven = false;
     public boolean[] cleared; 
     boolean finalDialog = false;
     boolean objComplete = false;
     boolean miniDefeat = false;
     boolean talkedGrandma = false;
+    boolean isFirstTimeM = true;
+    boolean isFirstTimeI = true;
     int[] mapLayout = new int[121]; 
+    int wrongKeyCount = 0;
     Dialog dialog = new Dialog();
     Battle battle = new Battle();        
     private boolean battleTriggered = false;
@@ -127,22 +130,6 @@ public class G9_Room2_PD6 implements KeyListener {
         loadSaveData();
     }
 
-    private void playMusic(String location) {
-        try {
-            File musicPath = new File(location);
-            if (musicPath.exists()) {
-                AudioInputStream audioInput = AudioSystem.getAudioInputStream(musicPath);
-                Clip clip = AudioSystem.getClip();
-                clip.open(audioInput);
-                clip.start();
-                clip.loop(Clip.LOOP_CONTINUOUSLY);
-            } else {
-                System.out.println("Can't find audio file: " + location);
-            }
-        } catch(Exception e) {
-            System.out.println("Error playing music: " + e);
-        }
-    }
     
     private void renderEntities() {
         for (int i = 0; i < gridSlots.length; i++) {
@@ -179,9 +166,7 @@ public class G9_Room2_PD6 implements KeyListener {
     // 1. Trash Pickup
     for (int i = 0; i < mapTrash.length; i++) {
         if (characterPosition == mapTrash[i] && mapTrash[i] != -1) {
-            // Block pickup if grandma hasn't been spoken to
             if (!talkedGrandma) {
-                // ADDED STYLE CHANGE HERE to match the image provided
                 JOptionPane.showMessageDialog(frame, "Invalid. Interact with Grandma first.", "Message", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
@@ -250,18 +235,18 @@ public class G9_Room2_PD6 implements KeyListener {
         setBlackOverlay(true);
         cutscene.setVisible(true); // show intro cutscene FIRST
 
-        new javax.swing.Timer(8000, new ActionListener() {
+        new javax.swing.Timer(5000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ((Timer) e.getSource()).stop();
                 cutscene.setVisible(false);
                 setBlackOverlay(false);
                 // THEN start the battle after cutscene ends
-                SwingUtilities.invokeLater(() ->
-                    battle.start(frame, "images/PDs game/map2/G9_minibossBG.png", "Bin Izharfed")
-                );
+                SwingUtilities.invokeLater(() -> {
+                    G9_Room1_PD4.stopMusic();
+                    battle.start(frame, "images/PDs game/map2/G9_minibossBG.png", "Bin Izharfed");
+                });
 
-                // Poll until the battle ends, then branch on win vs. loss
                 new javax.swing.Timer(500, new ActionListener() {
                     @Override
                     public void actionPerformed(ActionEvent ev) {
@@ -269,7 +254,6 @@ public class G9_Room2_PD6 implements KeyListener {
                             ((Timer) ev.getSource()).stop();
 
                             if (battle.hp > 0) {
-                                // ── Victory path ──────────────────────────────
                                 miniDefeat = true;
                                 SaveSystem.markDefeated("Bin Izharfed");
                                 saveProgress();
@@ -278,7 +262,7 @@ public class G9_Room2_PD6 implements KeyListener {
                                     .getScaledInstance(cutW, cutH, Image.SCALE_DEFAULT)));
                                 setBlackOverlay(true); 
                                 cutscene.setVisible(true);
-                                new javax.swing.Timer(8000, end -> {
+                                new javax.swing.Timer(5000, end -> {
                                     cutscene.setVisible(false);
                                     setBlackOverlay(false); 
                                     ((Timer) end.getSource()).stop();
@@ -411,29 +395,57 @@ public class G9_Room2_PD6 implements KeyListener {
         
     }
     
+    private void checkKey(int key) {
+    boolean isWASD  = (key == KeyEvent.VK_W || key == KeyEvent.VK_A ||
+                       key == KeyEvent.VK_S || key == KeyEvent.VK_D);
+    boolean isSpace = (key == KeyEvent.VK_SPACE || key == KeyEvent.VK_Z);
+    boolean isArrow = (key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_LEFT ||
+                       key == KeyEvent.VK_UP    || key == KeyEvent.VK_DOWN);
+
+    if (!isSpace && !isWASD) {
+        wrongKeyCount++;
+        if (isFirstTimeM && isArrow) {
+            wrongKeyCount = 0; isFirstTimeM = false;
+            JOptionPane.showMessageDialog(frame, "USE WASD FOR MOVEMENT.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            frame.requestFocusInWindow();
+        } else if (isFirstTimeI && !isArrow && !isWASD && !isSpace) {
+            wrongKeyCount = 0; isFirstTimeI = false;
+            JOptionPane.showMessageDialog(frame, "USE SPACEBAR TO INTERACT.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            frame.requestFocusInWindow();
+        } else if (wrongKeyCount == 5) {
+            wrongKeyCount = 0;
+            JOptionPane.showMessageDialog(frame, "DON'T FORGET TO USE WASD FOR MOVEMENT AND SPACEBAR TO INTERACT.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            frame.requestFocusInWindow();
+        }
+    } else {
+        wrongKeyCount = 0;
+    }
+}
+    
     @Override
     public void keyPressed(KeyEvent e) {
         if (dialog.isVisible()) return;
         int nextPos = characterPosition;
         int key = e.getKeyCode();
 
-        if (key == KeyEvent.VK_SPACE || key == KeyEvent.VK_Z) { 
-            interact(); 
-            return; 
+        checkKey(key);
+
+        if (key == KeyEvent.VK_SPACE || key == KeyEvent.VK_Z) {
+            interact();
+            return;
         }
 
-        if (key == KeyEvent.VK_RIGHT) {
+        if (key == KeyEvent.VK_D) {
             direction = "right";
             if ((characterPosition + 1) % mapW == 0) {
-                // Right edge: trigger cutscene/battle if objective done
                 if (objComplete && !battleTriggered) {
                     playCutscene(true);
                 }
                 return;
             } else nextPos++;
-        } else if (key == KeyEvent.VK_LEFT) { direction = "left"; if (characterPosition % mapW != 0) nextPos--; }
-        else if (key == KeyEvent.VK_DOWN) { direction = "down"; if (characterPosition + mapW < 121) nextPos += mapW; }
-        else if (key == KeyEvent.VK_UP) { direction = "up"; if (characterPosition - mapW >= 0) nextPos -= mapW; }
+        } else if (key == KeyEvent.VK_A) { direction = "left"; if (characterPosition % mapW != 0) nextPos--; }
+        else if (key == KeyEvent.VK_S) { direction = "down"; if (characterPosition + mapW < 121) nextPos += mapW; }
+        else if (key == KeyEvent.VK_W) { direction = "up"; if (characterPosition - mapW >= 0) nextPos -= mapW; }
 
         if (!isBlocked(nextPos)) {
             characterPosition = nextPos;
@@ -445,3 +457,5 @@ public class G9_Room2_PD6 implements KeyListener {
     @Override public void keyReleased(KeyEvent e) { animFrame = 0; renderEntities(); }
     @Override public void keyTyped(KeyEvent e) {}
 }
+
+// all assets, ideas, and concepts are human, but we've asked claude ai for help
