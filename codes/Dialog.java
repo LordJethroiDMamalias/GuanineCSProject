@@ -149,12 +149,12 @@ public class Dialog implements KeyListener, ActionListener {
         if (!isVisible) return;
 
         if (choicesDisplayed) {
-            if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+            if (e.getKeyCode() == KeyEvent.VK_A) {
                 selectedChoice = Math.max(0, selectedChoice - 1);
                 renderChoices();
                 return;
             }
-            if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+            if (e.getKeyCode() == KeyEvent.VK_D) {
                 selectedChoice = Math.min(currentChoices.length - 1, selectedChoice + 1);
                 renderChoices();
                 return;
