@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import javax.swing.*;
+import javax.sound.sampled.*;
 
 public class Battle {
 
@@ -45,6 +46,8 @@ public class Battle {
     private boolean        blocking           = false;
     private boolean        skipNextTurn       = false;
     private boolean        lastActionWasBlock = false;
+    private Clip bgmClip = null;
+    private final java.util.List<Clip> activeSFX = new java.util.concurrent.CopyOnWriteArrayList<>();
     private int            healsUsed          = 0;
     private static final int MAX_HEALS        = 5;
     private Timer          enemyTurnTimer = null;
@@ -443,6 +446,7 @@ public class Battle {
         frame.requestFocusInWindow();
 
         appendLog(boss + " stands in the way!");
+        playSound("music/" + boss + "-boss.wav");
     }
 
     private void initBossState(String enemy) {
@@ -666,6 +670,7 @@ public class Battle {
             log.append("Your attack phases through an illusion — no damage dealt!");
         } else {
             log.append("You attacked ").append(boss).append(" for ").append(finalDmg).append(" damage!");
+            playSFX("sfx/attack.wav");
         }
 
         for (EnemyPassive p : enemyPassives) {
@@ -690,6 +695,7 @@ public class Battle {
                 + "PASSIVE: " + passiveText + "\n"
                 + checkText;
         typewriterLog(info, null);
+        playSFX("sfx/button.wav");
     }
 
     private void handleBlock() {
@@ -702,6 +708,7 @@ public class Battle {
         lastActionWasBlock = true;
         typewriterLog("You brace for the next attack!", () ->
                 scheduleEnemyTurn(300));
+        playSFX("sfx/block.wav");
     }
 
     private void handleHeal() {
@@ -719,6 +726,7 @@ public class Battle {
             updateHpBar();
             scheduleEnemyTurn(300);
         });
+        playSFX("sfx/heal.wav");
     }
 
     // =========================================================================
@@ -811,7 +819,7 @@ public class Battle {
         if (ending) return;
         ending = true;
         disableButtons();
-        typewriterLog("You did it! We saved " + boss + " for real!", () -> {
+        typewriterLog("You did it! We saved " + boss + " for real!                                             ", () -> {
             Timer delay = new Timer(1800, e -> end());
             delay.setRepeats(false);
             delay.start();
@@ -836,6 +844,8 @@ public class Battle {
         if (!active) return;
         active = false;
         ending = true;
+
+        stopAllAudio();   // ← ADD THIS — stops BGM before cleanup
 
         if (enemyTurnTimer != null && enemyTurnTimer.isRunning()) {
             enemyTurnTimer.stop();
@@ -992,5 +1002,181 @@ public class Battle {
         setButtonsEnabled(false);
         for (JButton b : new JButton[]{fightButton, checkButton, blockButton, healButton})
             if (b != null) b.setBackground(new Color(50, 50, 50));
+    }
+    
+    // =========================================================================
+    // Music — filesystem-based loading, looping, with volume control.
+    // Stores the Clip as a field so it can be stopped cleanly in end().
+    // =========================================================================
+    public void playSound(String filePath) {
+        stopSound(); // Stop any currently playing BGM before starting a new one.
+
+        File audioFile = new File(filePath);
+
+        if (!audioFile.exists()) {
+            System.out.println("[Battle] Audio file not found: "
+                    + audioFile.getAbsolutePath());
+            return;
+        }
+
+        try {
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
+            bgmClip = AudioSystem.getClip();
+            bgmClip.open(audioStream);
+
+            setVolume(bgmClip, 0.85f); // 85% volume → ~-1.41 dB
+
+            bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
+            bgmClip.start();
+            System.out.println("[Battle] Now playing: " + filePath);
+
+        } catch (UnsupportedAudioFileException e) {
+            System.out.println("[Battle] Unsupported audio format: " + filePath);
+        } catch (LineUnavailableException e) {
+            System.out.println("[Battle] Audio line unavailable: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("[Battle] I/O error reading audio: " + e.getMessage());
+        }
+    }
+
+    // =========================================================================
+    // Plays a one-shot sound effect independently from the background music.
+    //
+    // Each call opens a brand-new Clip on its own audio line, so:
+    //   - Multiple SFX can overlap freely (rapid attacks, hits, etc.)
+    //   - The BGM Clip is never touched or interrupted
+    //   - The SFX Clip closes and releases itself via LineListener when done
+    //
+    // linearGain follows the same 0.0–1.0 scale as setVolume():
+    //   1.0f  = full volume   (same level as BGM master)
+    //   1.2f  = slightly louder than BGM (use sparingly — may clip on some systems)
+    //   0.75f = slightly quieter
+    // =========================================================================
+    public void playSFX(String filePath, float linearGain) {
+        File audioFile = new File(filePath);
+
+        if (!audioFile.exists()) {
+            System.out.println("[SFX] File not found: " + audioFile.getAbsolutePath());
+            return;
+        }
+
+        try {
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(audioFile);
+
+            // Each SFX gets its own Clip — completely separate from bgmClip.
+            // AudioSystem.getClip() allocates a new audio line every call.
+            Clip sfxClip = AudioSystem.getClip();
+            sfxClip.open(audioStream);
+
+            setVolume(sfxClip, linearGain);
+
+            // Register the clip before starting so the listener never races ahead
+            // of the add() call on extremely short audio files.
+            activeSFX.add(sfxClip);
+
+            // LineListener fires on the audio thread when playback reaches STOP
+            // (either natural end or manual stop). This is the correct place to
+            // release resources — do NOT call close() from the EDT here.
+            sfxClip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    activeSFX.remove(sfxClip);
+                    sfxClip.close(); // Releases the audio line back to the system
+                }
+            });
+
+            sfxClip.start(); // Fire-and-forget — the listener handles cleanup
+
+        } catch (UnsupportedAudioFileException e) {
+            System.out.println("[SFX] Unsupported format: " + filePath);
+        } catch (LineUnavailableException e) {
+            // Happens if the system has hit its audio line limit (too many open clips).
+            System.out.println("[SFX] No audio line available: " + e.getMessage());
+        } catch (IOException e) {
+            System.out.println("[SFX] I/O error: " + e.getMessage());
+        }
+    }
+
+    // =========================================================================
+    // Convenience overload — plays SFX at full volume without specifying gain.
+    // Use this when you don't need per-effect volume tuning.
+    // =========================================================================
+    public void playSFX(String filePath) {
+        playSFX(filePath, 0.9f);
+    }
+
+    // =========================================================================
+    // Converts a linear gain (0.0 = silent, 1.0 = full) to decibels and
+    // applies it to the given Clip via MASTER_GAIN FloatControl.
+    //
+    // Formula: dB = 20 * log10(linearGain)
+    //   0.85f → ~-1.41 dB  (subtle reduction, still very audible)
+    //   0.50f → ~-6.02 dB  (noticeably quieter)
+    //
+    // Falls back silently if the audio system doesn't support gain control
+    // (e.g. some Linux drivers or virtual audio devices).
+    // =========================================================================
+    private void setVolume(Clip clip, float linearGain) {
+        // Guard: clamp input to a valid range to avoid log10(0) = -Infinity
+        // and log10(negative) = NaN, both of which would corrupt the control.
+        if (linearGain <= 0f) {
+            linearGain = 0.0001f; // Effectively silent but avoids -Infinity dB
+        } else if (linearGain > 1f) {
+            linearGain = 1f;      // Clamp to full volume — don't allow clipping
+        }
+
+        if (!clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+            // Not an error — some audio systems simply don't expose this control.
+            // Music will play at default volume rather than crashing or going silent.
+            System.out.println("[Battle] Volume control not supported on this system — playing at default volume.");
+            return;
+        }
+
+        FloatControl gainControl =
+                (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+        // Convert linear gain to decibels.
+        float dB = 20f * (float) Math.log10(linearGain);
+
+        // Clamp to the range the hardware actually supports.
+        // Typical range is [-80.0, 6.0] dB but varies by system.
+        float min = gainControl.getMinimum(); // e.g. -80.0f
+        float max = gainControl.getMaximum(); // e.g.   6.0f
+        float clamped = Math.max(min, Math.min(max, dB));
+
+        gainControl.setValue(clamped);
+        System.out.printf("[Battle] Volume set to %.0f%%%% (%.2f dB)%n",
+                linearGain * 100, clamped);
+    }
+
+    // =========================================================================
+    // Stops and releases all active SFX clips immediately.
+    // Safe to call at any time — skips clips that have already self-closed.
+    // =========================================================================
+    public void stopAllSFX() {
+        for (Clip sfx : activeSFX) {       // CopyOnWriteArrayList — safe to iterate
+            if (sfx.isOpen()) {
+                if (sfx.isRunning()) sfx.stop(); // Triggers the LineListener → close()
+            }
+        }
+        activeSFX.clear(); // Belt-and-suspenders clear in case any listeners lag
+    }
+
+    // =========================================================================
+    // Stops BGM. Unchanged except for the added stopAllSFX() call.
+    // =========================================================================
+    public void stopSound() {
+        if (bgmClip != null) {
+            if (bgmClip.isRunning()) bgmClip.stop();
+            bgmClip.close();
+            bgmClip = null;
+        }
+    }
+
+    // =========================================================================
+    // Full audio teardown — call this from end() to clean up everything.
+    // =========================================================================
+    public void stopAllAudio() {
+        stopSound();    // BGM
+        stopAllSFX();   // Any SFX still playing (e.g. attack sound mid-animation)
     }
 }
