@@ -1,5 +1,5 @@
-    package codes;
-    // grp: ancla, badayos, sepe
+package codes;
+// grp: ancla, badayos, sepe
     import javax.swing.*;
     import java.awt.*;
     import java.awt.event.*;
@@ -9,7 +9,7 @@
     import javax.sound.sampled.AudioInputStream;
     import javax.sound.sampled.AudioSystem;
     import javax.sound.sampled.Clip;
-    
+
     // --- CUSTOM EXCEPTIONS ---
     class WASDException extends Exception {
         public WASDException(String message) { super(message); }
@@ -108,7 +108,7 @@
             tKite = scale("images/PDs game/map1/G9_torn kite.png", cw, ch);
             tBear = scale("images/PDs game/map1/G9_teddy.png", cw, ch);
 
-            playMusic("dungeon9.wav");
+            playMusic("music/Bin Izharfed.wav");
 
             gridSlots = new JLabel[mapW * mapH];
             toys = new JLabel[mapW * mapH];
@@ -120,7 +120,6 @@
                 toys[i] = new JLabel();
             }
 
-            // Toy Spawning Logic
          List<Integer> validTiles = new ArrayList<>();
 
 for (int i = 0; i < mapLayout.length; i++) {
@@ -148,20 +147,30 @@ for (int i = 0; i < mapLayout.length; i++) {
             loadSaveData();
         }
 
+        private static Clip bgmClip = null;
+
         private void playMusic(String location) {
             try {
                 File musicPath = new File(location);
                 if (musicPath.exists()) {
                     AudioInputStream audioInput = AudioSystem.getAudioInputStream(musicPath);
-                    Clip clip = AudioSystem.getClip();
-                    clip.open(audioInput);
-                    clip.start();
-                    clip.loop(Clip.LOOP_CONTINUOUSLY);
+                    bgmClip = AudioSystem.getClip();
+                    bgmClip.open(audioInput);
+                    bgmClip.start();
+                    bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
                 } else {
                     System.out.println("Can't find audio file: " + location);
                 }
             } catch(Exception e) {
                 System.out.println("Error playing music: " + e);
+            }
+        }
+
+        public static void stopMusic() {
+            if (bgmClip != null && bgmClip.isOpen()) {
+                if (bgmClip.isRunning()) bgmClip.stop();
+                bgmClip.close();
+                bgmClip = null;
             }
         }
 
@@ -204,18 +213,18 @@ for (int i = 0; i < mapLayout.length; i++) {
             boolean isArrow = (keyCode == KeyEvent.VK_RIGHT || keyCode == KeyEvent.VK_LEFT ||
                                keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_DOWN);
 
-            if (!isSpace && !isArrow) {
+            if (!isSpace && !isWASD) {
                 wrongKeyCount++;
-                if(isFirstTimeM && isWASD) {
+                if (isFirstTimeM && isArrow) {
                     wrongKeyCount = 0; isFirstTimeM = false;
-                    throw new TooManyErrorsException("USE ARROW KEYS FOR MOVEMENT.");
-                } else if (isFirstTimeI && !isArrow && !isWASD && !isSpace){
+                    throw new TooManyErrorsException("USE WASD FOR MOVEMENT.");
+                } else if (isFirstTimeI && !isArrow && !isWASD && !isSpace) {
                     wrongKeyCount = 0; isFirstTimeI = false;
                     throw new TooManyErrorsException("USE SPACEBAR TO INTERACT.");
                 }
-                if(wrongKeyCount == 5) {
-                    wrongKeyCount = 0; 
-                    throw new TooManyErrorsException("DON'T FORGET TO USE ARROW KEYS FOR MOVEMENT AND SPACEBAR TO INTERACT.");
+                if (wrongKeyCount == 5) {
+                    wrongKeyCount = 0;
+                    throw new TooManyErrorsException("DON'T FORGET TO USE WASD FOR MOVEMENT AND SPACEBAR TO INTERACT.");
                 }
             } else {
                 wrongKeyCount = 0;
@@ -227,20 +236,12 @@ public void keyPressed(KeyEvent e) {
     if (dialog.isVisible()) return;
     int keyCode = e.getKeyCode();
     
-    // --- DEBUG VIEW: PRESS V ---
-    if (keyCode == KeyEvent.VK_V) {
-        gridSlots[toyLoc[0]].setIcon(tBear);
-        gridSlots[toyLoc[1]].setIcon(tKite);
-        gridSlots[toyLoc[2]].setIcon(tYoyo);
-        gridSlots[toyLoc[3]].setIcon(tCar);
-        return; // Exit so it doesn't try to "move"
-    }
             try {
                 checkKey(keyCode);
-                if (keyCode == KeyEvent.VK_RIGHT) { move(1, 0, "right"); }
-                else if (keyCode == KeyEvent.VK_LEFT) { move(-1, 0, "left"); }
-                else if (keyCode == KeyEvent.VK_DOWN) { move(0, 1, "down"); }
-                else if (keyCode == KeyEvent.VK_UP) { move(0, -1, "up"); }
+                if (keyCode == KeyEvent.VK_D) { move(1, 0, "right"); }
+                else if (keyCode == KeyEvent.VK_A) { move(-1, 0, "left"); }
+                else if (keyCode == KeyEvent.VK_S) { move(0, 1, "down"); }
+                else if (keyCode == KeyEvent.VK_W) { move(0, -1, "up"); }
                 else if (keyCode == KeyEvent.VK_SPACE) { handleInteraction(); }
             } catch (WASDException | InvalidKeyException | TooManyErrorsException ex) {
                 JOptionPane.showMessageDialog(frame, ex.getMessage(), "Input Error", JOptionPane.WARNING_MESSAGE);
@@ -265,7 +266,6 @@ private void move(int dx, int dy, String dir) {
 
         if (dx == 1) {
             if ((characterPosition + 1) % mapW == 0) {
-                // Right edge only: transition or prompt
                 direction = dir;
                 if (hasFinalGift) {
                     startNextMap();
@@ -275,14 +275,9 @@ private void move(int dx, int dy, String dir) {
                     }, null, null, mapW, mapH);
                 }
                 return;
-            } /*else if (onStairs) {
-                // pa right
-            }*/else next++;
+            } else next++;
         } else if (dx == -1) {
-            if (characterPosition % mapW == 0) { /* left edge: do nothing */ }
-            /*else if (onStairs) {
-                next = characterPosition - 1 + mapW;
-            }*/
+            if (characterPosition % mapW == 0) {}
             else next--;
         } else if (dy == 1) {
             if (characterPosition + mapW < mapLayout.length) next += mapW;
@@ -313,7 +308,7 @@ private void move(int dx, int dy, String dir) {
             int h = icon.getIconHeight();
             java.awt.image.BufferedImage buf = new java.awt.image.BufferedImage(w, h + pixels, java.awt.image.BufferedImage.TYPE_INT_ARGB);
             java.awt.Graphics2D g = buf.createGraphics();
-            g.drawImage(icon.getImage(), 0, pixels, null); // draw icon shifted down
+            g.drawImage(icon.getImage(), 0, pixels, null);
             g.dispose();
             return new ImageIcon(buf);
         }
@@ -444,7 +439,6 @@ private void handleCorrect(String msg) {
 }
 
         private void startNextMap() {
-            // Write a handoff save under PD6's map key so it loads with the correct time
             SaveSystem.saveGame(
                 new SaveSystem.SaveData.Builder("G9_Room2_PD6")
                     .time(SaveSystem.getTotalSeconds())
@@ -534,3 +528,5 @@ private void handleCorrect(String msg) {
         @Override public void keyReleased(KeyEvent e) { animFrame = 0; render(); }
         @Override public void keyTyped(KeyEvent e) {}
     }
+
+/*all the assets, concepts, ideas are human but we had help in the code from claude AI*/
