@@ -46,6 +46,26 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
 
     SaveSystem.SaveData saveData;
 
+    // ========== CONSTRUCTORS ==========
+
+    /**
+     * Called when transitioning from Room 1.
+     * Accepts the already-playing Clip so music continues without interruption.
+     */
+    public G6_Room2_PD6(Clip existingClip) {
+        this.bgMusic = existingClip; // reuse Room 1's clip — no gap in music
+    }
+
+    /**
+     * No-arg constructor for standalone launch (e.g. main method).
+     * bgMusic stays null; setFrame() will start fresh music.
+     */
+    public G6_Room2_PD6() {
+        // bgMusic is null — playMusic() will be called in setFrame()
+    }
+
+    // ========== MUSIC ==========
+
     void playMusic(String path) {
         try {
             File musicFile = new File(path);
@@ -66,8 +86,14 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
         }
     }
 
+    // ========== FRAME ==========
+
     public void setFrame() {
-        playMusic("music/Main.wav");
+        // Only start music if no existing clip was passed in from Room 1
+        if (bgMusic == null) {
+            playMusic("music/Main.wav");
+        }
+        // If bgMusic was passed in from Room1, it is already playing — do nothing.
 
         // ---------- LOAD SAVE ----------
         saveData = SaveSystem.loadGame("G6_Room2_PD6");
@@ -170,7 +196,8 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
         return new ImageIcon(img.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH));
     }
 
-    // ---------- QUESTIONS ----------
+    // ========== QUESTIONS ==========
+
     void triggerQuestion() {
         String[][] qBank = {
             {"What is H2O?", "Water","Oxygen","Hydrogen","Salt"},
@@ -283,7 +310,8 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
         );
     }
 
-    // ---------- MOVEMENT (WASD) ----------
+    // ========== MOVEMENT (WASD) ==========
+
     @Override
     public void keyPressed(KeyEvent e) {
 
