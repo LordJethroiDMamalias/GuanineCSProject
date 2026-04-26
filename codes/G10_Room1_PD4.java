@@ -17,20 +17,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * G10_Room1_PD4 — Mini-Boss Room (Don Malek)
- *
- * Audio:
- *   Overworld  → DONMALEK.wav
- *   Battle     → DONMALEK-boss.wav
- *   Post-battle→ DONMALEK.wav  (resumes)
- *
- * Open from another class:
- *   G10_Room1_PD4.openRoom();
- */
 public class G10_Room1_PD4 extends JPanel implements KeyListener {
 
-    // ── Grid / display ────────────────────────────────────────────────────────
     final int COLS   = 33;
     final int ROWS   = 20;
     final int WIDTH  = 660;
@@ -38,7 +26,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
     final int TILE_W = WIDTH  / COLS;
     final int TILE_H = HEIGHT / ROWS;
 
-    // ── Key positions ─────────────────────────────────────────────────────────
     final int SPAWN_X        = 11;
     final int SPAWN_Y        = 14;
     final int DOOR_X         = 15;
@@ -51,7 +38,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
     int gridX = SPAWN_X;
     int gridY = SPAWN_Y;
 
-    // ── Project root ──────────────────────────────────────────────────────────
     private static final String PROJECT_ROOT = resolveRoot();
 
     private static String resolveRoot() {
@@ -67,49 +53,39 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
                 if (new File(dir, "docs").isDirectory()) return dir.getAbsolutePath();
                 dir = dir.getParentFile();
             }
-        } catch (URISyntaxException | SecurityException ex) { /* ignore */ }
+        } catch (URISyntaxException | SecurityException ex) {  }
 
         return cwd;
     }
 
-    // ── Images ────────────────────────────────────────────────────────────────
     BufferedImage mapImg;
     BufferedImage playerUp, playerDown, playerLeft, playerRight;
     BufferedImage currentPlayer;
     BufferedImage bossImg;
 
-    // ── Walkability ───────────────────────────────────────────────────────────
     boolean[][] walkable = new boolean[ROWS][COLS];
 
-    // ── Battle ────────────────────────────────────────────────────────────────
     private final Battle battle       = new Battle();
     private boolean      battleActive  = false;
     private boolean      bossDefeated  = false;
     private String       savedUserDir  = null;
 
-    // ── Save ──────────────────────────────────────────────────────────────────
     private SaveSystem.SaveData saveData;
     private long                battleStartTime = 0;
 
-    // ── Dialog ────────────────────────────────────────────────────────────────
     private final List<String> dialogLines = new ArrayList<>();
     private int      dialogIndex   = 0;
     private boolean  dialogVisible = false;
     private Runnable dialogOnClose = null;
 
-    // ── Transition ────────────────────────────────────────────────────────────
     private boolean  transitioning  = false;
-    private float    transAlpha     = 0f;          // 0 = transparent, 1 = black
+    private float    transAlpha     = 0f;
     private Timer    transTimer     = null;
     private Runnable transOnComplete = null;
 
-    // ── Audio ─────────────────────────────────────────────────────────────────
     private Clip overworldClip = null;
     private Clip battleClip    = null;
 
-    // =========================================================================
-    // Constructor
-    // =========================================================================
     public G10_Room1_PD4() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setFocusable(true);
@@ -131,7 +107,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         saveData = SaveSystem.loadGame("G10_Room1_PD4");
         if (saveData.isDefeated("Don Malek")) bossDefeated = true;
 
-        // Start overworld BGM
         SwingUtilities.invokeLater(() -> {
             startOverworldMusic();
             playIntroDialog();
@@ -139,11 +114,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         requestFocusInWindow();
     }
 
-    // =========================================================================
-    // Audio helpers
-    // =========================================================================
-
-    /** Loads a WAV clip from the docs/ or audio/ folders. Returns null on failure. */
     private Clip loadClip(String filename) {
         String[] bases = {
             PROJECT_ROOT + "/src/music/",
@@ -174,7 +144,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         return null;
     }
 
-    /** Stops and disposes a clip safely. */
     private void stopClip(Clip clip) {
         if (clip != null && clip.isOpen()) {
             clip.stop();
@@ -182,7 +151,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         }
     }
 
-    /** Starts looping overworld music (DONMALEK.wav). */
     private void startOverworldMusic() {
         stopClip(battleClip);
         battleClip = null;
@@ -194,7 +162,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         }
     }
 
-    /** Starts looping battle music (DONMALEK-boss.wav). */
     private void startBattleMusic() {
         stopClip(overworldClip);
         overworldClip = null;
@@ -206,7 +173,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         }
     }
 
-    /** Stops all audio (call on dispose). */
     public void stopAllMusic() {
         stopClip(overworldClip);
         stopClip(battleClip);
@@ -214,14 +180,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         battleClip    = null;
     }
 
-    // =========================================================================
-    // Transition
-    // =========================================================================
-
-    /**
-     * Fades screen to black, runs onComplete, then (optionally) fades back in.
-     * If fadeBack is true the overlay fades out after onComplete runs.
-     */
     private void fadeOut(Runnable onComplete) {
         if (transitioning) return;
         transitioning   = true;
@@ -236,7 +194,7 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
                 transAlpha = 1f;
                 transTimer.stop();
                 repaint();
-                // Short pause at full black, then run callback
+
                 Timer pause = new Timer(150, ev -> {
                     Runnable cb = transOnComplete;
                     transOnComplete = null;
@@ -266,9 +224,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         transTimer.start();
     }
 
-    // =========================================================================
-    // Stats file fix (reflection)
-    // =========================================================================
     private void fixStatsFilePath() {
         String[] candidates = {
             PROJECT_ROOT + "/docs/battleStats.txt",
@@ -291,9 +246,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         }
     }
 
-    // =========================================================================
-    // Battle sprites fix (reflection)
-    // =========================================================================
     private void fixBattleBackground(JFrame frame) {
         swapImageField(frame, "backgroundImage", "G10_battleBG.png");
         swapImageField(frame, "enemyBattle",     "G10_Don Malek1.png");
@@ -323,9 +275,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         }
     }
 
-    // =========================================================================
-    // Asset loading
-    // =========================================================================
     BufferedImage load(String name) {
         String[] bases = {
             PROJECT_ROOT + "/images/",
@@ -346,9 +295,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         return null;
     }
 
-    // =========================================================================
-    // Collision
-    // =========================================================================
     void generateCollision() {
         if (mapImg == null) {
             for (int y = 0; y < ROWS; y++)
@@ -370,9 +316,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         }
     }
 
-    // =========================================================================
-    // Movement
-    // =========================================================================
     int px() { return gridX * TILE_W; }
     int py() { return gridY * TILE_H; }
 
@@ -399,9 +342,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         repaint();
     }
 
-    // =========================================================================
-    // Boss battle
-    // =========================================================================
     private void triggerBossBattle() {
         battleActive    = true;
         battleStartTime = System.currentTimeMillis();
@@ -414,7 +354,7 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
             "Don Malek: 'You shouldn\u2019t have come here.'",
             "Don Malek: 'Let\u2019s settle this properly.'"
         }, () -> {
-            // Switch to battle BGM
+
             startBattleMusic();
 
             savedUserDir = System.getProperty("user.dir");
@@ -449,7 +389,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
             savedUserDir = null;
         }
 
-        // Return to overworld BGM
         startOverworldMusic();
 
         long    elapsed = (System.currentTimeMillis() - battleStartTime) / 1000;
@@ -464,7 +403,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
             List<String> battles = new ArrayList<>(saveData.battles);
             if (!battles.contains("Don Malek")) battles.add("Don Malek");
 
-            // No position saved — per request
             SaveSystem.saveGame(new SaveSystem.SaveData.Builder("G10_Room1_PD4")
                 .flags(saveData.flags)
                 .battles(battles)
@@ -504,11 +442,8 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         });
     }
 
-    // =========================================================================
-    // Door → G10_Room2_PD6  (with fade transition)
-    // =========================================================================
     void enterDoor() {
-        // Fade to black, then open PD6
+
         fadeOut(() -> {
             stopAllMusic();
 
@@ -533,14 +468,11 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
                 bossFrame.setLocationRelativeTo(null);
                 bossFrame.setVisible(true);
                 bossRoom.requestFocusInWindow();
-                // PD6 will fade in on its own intro
+
             });
         });
     }
 
-    // =========================================================================
-    // Dialog
-    // =========================================================================
     private void showDialog(String[] lines, Runnable onClose) {
         dialogLines.clear();
         for (String l : lines) dialogLines.add(l);
@@ -577,9 +509,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         }, null);
     }
 
-    // =========================================================================
-    // Painting
-    // =========================================================================
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -589,7 +518,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         if (mapImg != null) g2.drawImage(mapImg, 0, 0, WIDTH, HEIGHT, null);
         else { g2.setColor(new Color(20, 15, 35)); g2.fillRect(0, 0, WIDTH, HEIGHT); }
 
-        // Door highlight
         if (bossDefeated) {
             g2.setColor(new Color(100, 200, 255, 160));
             g2.fillRect(DOOR_X * TILE_W, DOOR_Y * TILE_H, TILE_W, TILE_H);
@@ -598,7 +526,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         g2.setStroke(new BasicStroke(2));
         g2.drawRect(DOOR_X * TILE_W, DOOR_Y * TILE_H, TILE_W, TILE_H);
 
-        // Boss sprite
         if (!bossDefeated) {
             if (bossImg != null) {
                 g2.drawImage(bossImg, BOSS_TILE_X * TILE_W, BOSS_TILE_Y * TILE_H,
@@ -615,7 +542,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
             g2.fillRect(BOSS_TRIGGER_X * TILE_W, BOSS_TRIGGER_Y * TILE_H, TILE_W, TILE_H);
         }
 
-        // Player
         if (!battleActive) {
             if (currentPlayer != null)
                 g2.drawImage(currentPlayer, px(), py(), TILE_W, TILE_H, null);
@@ -625,7 +551,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
             }
         }
 
-        // Dialog box
         if (dialogVisible && !dialogLines.isEmpty()) {
             int boxH = 80, boxY = HEIGHT - boxH - 10, pad = 12;
             g2.setColor(new Color(0, 0, 0, 210));
@@ -651,7 +576,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
                     WIDTH - pad * 2 - 90, boxY + boxH - 8);
         }
 
-        // Fade overlay (transition)
         if (transAlpha > 0f) {
             int a = Math.min(255, (int)(transAlpha * 255));
             g2.setColor(new Color(0, 0, 0, a));
@@ -659,9 +583,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         }
     }
 
-    // =========================================================================
-    // Input
-    // =========================================================================
     @Override
     public void keyPressed(KeyEvent e) {
         int k = e.getKeyCode();
@@ -678,11 +599,6 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e)    {}
 
-    // =========================================================================
-    // Public entry points
-    // =========================================================================
-
-    /** Open this room from any other class. */
     public static void openRoom() {
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("Mini Boss Room \u2014 Don Malek");
