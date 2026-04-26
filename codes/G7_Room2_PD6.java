@@ -630,26 +630,28 @@ public class G7_Room2_PD6 implements KeyListener {
     }
 
     // ── Key input ──────────────────────────────────────────────────────────────
-    @Override
-    public void keyPressed(KeyEvent e) {
-        if (dialog.isVisible() || Battle.paused || blackjackActive) return;
+  @Override
+public void keyPressed(KeyEvent e) {
+    if (dialog.isVisible() || Battle.paused || blackjackActive) return;
 
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP    -> facingDirection = "UP";
-            case KeyEvent.VK_DOWN  -> facingDirection = "DOWN";
-            case KeyEvent.VK_LEFT  -> facingDirection = "LEFT";
-            case KeyEvent.VK_RIGHT -> facingDirection = "RIGHT";
-        }
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP    -> movePlayer(-1,  0);
-            case KeyEvent.VK_DOWN  -> movePlayer( 1,  0);
-            case KeyEvent.VK_LEFT  -> movePlayer( 0, -1);
-            case KeyEvent.VK_RIGHT -> movePlayer( 0,  1);
-            case KeyEvent.VK_SPACE -> interact();
-        }
-        updatePlayerLabel();
-        layers.repaint();
+    switch (e.getKeyCode()) {
+        case KeyEvent.VK_UP,    KeyEvent.VK_W -> facingDirection = "UP";
+        case KeyEvent.VK_DOWN,  KeyEvent.VK_S -> facingDirection = "DOWN";
+        case KeyEvent.VK_LEFT,  KeyEvent.VK_A -> facingDirection = "LEFT";
+        case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> facingDirection = "RIGHT";
     }
+
+    switch (e.getKeyCode()) {
+        case KeyEvent.VK_UP,    KeyEvent.VK_W -> movePlayer(-1,  0);
+        case KeyEvent.VK_DOWN,  KeyEvent.VK_S -> movePlayer( 1,  0);
+        case KeyEvent.VK_LEFT,  KeyEvent.VK_A -> movePlayer( 0, -1);
+        case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> movePlayer( 0,  1);
+        case KeyEvent.VK_SPACE                -> interact();
+    }
+
+    updatePlayerLabel();
+    layers.repaint();
+}
 
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
