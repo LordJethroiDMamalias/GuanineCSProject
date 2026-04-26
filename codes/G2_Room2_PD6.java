@@ -66,11 +66,12 @@ public class G2_Room2_PD6 implements KeyListener {
         // Previously these were inside the try block, so if the background image
         // failed to load the catch would fire and skip the sprite loop entirely,
         // leaving every pUp/pDown/pLeft/pRight slot as null.
+        int spriteSize = 60; // match PD4 visual size
         for (int i = 0; i < 4; i++) {
-            pUp[i]    = scale("images/up_"    + (i + 1) + ".png", tw, th);
-            pDown[i]  = scale("images/down_"  + (i + 1) + ".png", tw, th);
-            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png", tw, th);
-            pRight[i] = scale("images/right_" + (i + 1) + ".png", tw, th);
+            pUp[i]    = scale("images/up_"    + (i + 1) + ".png", spriteSize, spriteSize);
+            pDown[i]  = scale("images/down_"  + (i + 1) + ".png", spriteSize, spriteSize);
+            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png", spriteSize, spriteSize);
+            pRight[i] = scale("images/right_" + (i + 1) + ".png", spriteSize, spriteSize);
         }
 
         // ── Background & NPC (allowed to fail without crashing) ───────────────
@@ -87,7 +88,7 @@ public class G2_Room2_PD6 implements KeyListener {
                 throw new FileNotFoundException(
                         "NPC image not found at images/G2_MakeupNPC.png");
             MakeupNPC = new ImageIcon(MakeupNPC.getImage()
-                    .getScaledInstance(tw, th, Image.SCALE_DEFAULT));
+                    .getScaledInstance(60, 60, Image.SCALE_DEFAULT));
 
         } catch (FileNotFoundException e) {
             System.err.println("Missing asset: " + e.getMessage());
@@ -206,7 +207,7 @@ public class G2_Room2_PD6 implements KeyListener {
 
             int x = 0, y = 0;
             for (int i = 0; i < characterLabels.length; i++) {
-                layers.add(characterLabels[i], new Rectangle(x, y, 1, 1), 0);
+                layers.add(characterLabels[i], new Rectangle(x, y, 2, 2), 0);
                 x++;
                 if (x % mapWidth == 0) { x = 0; y++; }
             }
@@ -410,8 +411,6 @@ public class G2_Room2_PD6 implements KeyListener {
     }
 
     public static void main(String[] args) {
-        // Guard: if Room2 is launched directly (without going through Room1 first),
-        // start the music here. If it's already playing this call is a no-op.
         G2_Room1_PD4.MusicPlayer.start("music/Green Room.wav");
 
         try {
