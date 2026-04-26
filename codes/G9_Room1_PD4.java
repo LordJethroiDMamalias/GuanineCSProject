@@ -84,29 +84,29 @@ package codes;
             int cw = (int)(tw * 0.7);
             int ch = (int)(th * 0.7);
 
-            ImageIcon mapImg = new ImageIcon("images/PDs game/map1/G9_map1f.png");
+            ImageIcon mapImg = new ImageIcon("images/G9_map1f.png");
             background = new JLabel(new ImageIcon(mapImg.getImage().getScaledInstance(frW, frH, Image.SCALE_DEFAULT)));
 
             // Assets
-            pStand = scale("images/PDs game/univ/G9_pFront.png", cw, ch);
-            pFrontW = scale("images/PDs game/univ/G9_pFront.png", cw, ch);
-            pFrontW1 = scale("images/PDs game/univ/G9_pFrontLW.png", cw, ch);
-            pFrontW2 = scale("images/PDs game/univ/G9_pFrontRW.png", cw, ch);
-            pBack = scale("images/PDs game/univ/G9_pBack.png", cw, ch);
-            pBack1 = scale("images/PDs game/univ/G9_pBack1.png", cw, ch);
-            pBack2 = scale("images/PDs game/univ/G9_pBack2.png", cw, ch);
-            pLeft = scale("images/PDs game/univ/G9_pLeft1.png", cw, ch);
-            pLeft1 = scale("images/PDs game/univ/G9_pLeft.png", cw, ch);
-            pLeft2 = scale("images/PDs game/univ/G9_pLeft2.png", cw, ch);
-            pRight = scale("images/PDs game/univ/G9_pRight1.png", cw, ch);
-            pRight1 = scale("images/PDs game/univ/G9_pRight.png", cw, ch);
-            pRight2 = scale("images/PDs game/univ/G9_pRight2.png", cw, ch);
+            pStand = scale("images/G9_pFront.png", cw, ch);
+            pFrontW = scale("images/G9_pFront.png", cw, ch);
+            pFrontW1 = scale("images/G9_pFrontLW.png", cw, ch);
+            pFrontW2 = scale("images/G9_pFrontRW.png", cw, ch);
+            pBack = scale("images/G9_pBack.png", cw, ch);
+            pBack1 = scale("images/G9_pBack1.png", cw, ch);
+            pBack2 = scale("images/G9_pBack2.png", cw, ch);
+            pLeft = scale("images/G9_pLeft1.png", cw, ch);
+            pLeft1 = scale("images/G9_pLeft.png", cw, ch);
+            pLeft2 = scale("images/G9_pLeft2.png", cw, ch);
+            pRight = scale("images/G9_pRight1.png", cw, ch);
+            pRight1 = scale("images/G9_pRight.png", cw, ch);
+            pRight2 = scale("images/G9_pRight2.png", cw, ch);
 
-            npcKid = scale("images/PDs game/map1/G9_caseohT.png", cw, ch);
-            tYoyo = scale("images/PDs game/map1/G9_yoyo.png", cw, ch);
-            tCar = scale("images/PDs game/map1/G9_locket.png", cw, ch);
-            tKite = scale("images/PDs game/map1/G9_torn kite.png", cw, ch);
-            tBear = scale("images/PDs game/map1/G9_teddy.png", cw, ch);
+            npcKid = scale("images/G9_caseohT.png", cw, ch);
+            tYoyo = scale("images/G9_yoyo.png", cw, ch);
+            tCar = scale("images/G9_locket.png", cw, ch);
+            tKite = scale("images/G9_torn kite.png", cw, ch);
+            tBear = scale("images/G9_teddy.png", cw, ch);
 
             playMusic("music/Bin Izharfed.wav");
 
@@ -147,9 +147,9 @@ for (int i = 0; i < mapLayout.length; i++) {
             loadSaveData();
         }
 
-        private static Clip bgmClip = null;
+        public static Clip bgmClip = null;
 
-        private void playMusic(String location) {
+        public static void playMusic(String location) {
             try {
                 File musicPath = new File(location);
                 if (musicPath.exists()) {
@@ -529,4 +529,4 @@ private void handleCorrect(String msg) {
         @Override public void keyTyped(KeyEvent e) {}
     }
 
-/*all the assets, concepts, ideas are human but we had help in the code from claude AI*/
+/*all the assets, concepts are human but we had help in the code from claude AI*/
