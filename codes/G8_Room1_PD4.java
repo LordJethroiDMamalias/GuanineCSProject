@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.concurrent.*;
+import javax.sound.sampled.*;
+import java.io.File;
 
 public class G8_Room1_PD4 implements KeyListener {
 
@@ -28,6 +30,35 @@ public class G8_Room1_PD4 implements KeyListener {
     boolean[] isRedTile;
     boolean[] hasBomb;
     ScheduledExecutorService bombScheduler;
+
+    // --- MUSIC SYSTEM (Shared with PD6) ---
+    public static Clip bgmClip;
+    public static String currentSong = "";
+
+    public static void playMusic(String location) {
+        if (currentSong.equals(location)) return; // Keep playing if it's the same song
+        try {
+            stopMusic();
+            File musicPath = new File(location);
+            if (musicPath.exists()) {
+                AudioInputStream audioInput = AudioSystem.getAudioInputStream(musicPath);
+                bgmClip = AudioSystem.getClip();
+                bgmClip.open(audioInput);
+                bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
+                bgmClip.start();
+                currentSong = location;
+            }
+        } catch(Exception e) { System.out.println("Music Error: " + e); }
+    }
+
+    public static void stopMusic() {
+        if (bgmClip != null && bgmClip.isOpen()) {
+            bgmClip.stop();
+            bgmClip.close();
+        }
+        currentSong = "";
+    }
+    // ---------------------------------------
 
     public G8_Room1_PD4() {
         frame = new JFrame("Bomber - Room 1");
@@ -103,20 +134,23 @@ public class G8_Room1_PD4 implements KeyListener {
     }
 
     public void setFrame() {
+        // Start Exploration Music
+        playMusic("music/GIGGLEBOT3000.wav");
+
         layeredPane = new JLayeredPane();
         layeredPane.setPreferredSize(new Dimension(frameWidth, frameHeight));
 
         JPanel tilePanel = new JPanel(new GridLayout(mapHeight, mapWidth));
         tilePanel.setBounds(0, 0, frameWidth, frameHeight);
         for (JLabel t : tiles) tilePanel.add(t);
-
+    
         JPanel charPanel = new JPanel(new GridLayout(mapHeight, mapWidth));
         charPanel.setBounds(0, 0, frameWidth, frameHeight);
         charPanel.setOpaque(false);
         for (JLabel c : characterLabels) charPanel.add(c);
 
-        layeredPane.add(tilePanel, Integer.valueOf(0));
-        layeredPane.add(charPanel, Integer.valueOf(1));
+        layeredPane.add(tilePanel, JLayeredPane.DEFAULT_LAYER);
+        layeredPane.add(charPanel, JLayeredPane.PALETTE_LAYER);
 
         frame.add(layeredPane);
         frame.setFocusable(true);
@@ -189,7 +223,19 @@ public class G8_Room1_PD4 implements KeyListener {
     private void startWinTimer() {
         javax.swing.Timer timer = new javax.swing.Timer(30000, e -> {
             if (bombScheduler != null) bombScheduler.shutdownNow();
-            dialog.show(layeredPane, new String[]{"VICTORY!", "You survived!"}, null, new Runnable[]{() -> System.exit(0)}, mapWidth, mapHeight, null);
+
+            dialog.show(layeredPane, 
+                new String[]{"VICTORY!",
+                    "Looks like you survived the bombs, Heh, Lets see you battle me.",
+                    "Teleporting to my lab*"
+                }, 
+                null, null, mapWidth, mapHeight, 
+                () -> { 
+                    frame.dispose(); 
+                    G8_Room2_PD6 nextRoom = new G8_Room2_PD6();
+                    nextRoom.setFrame();
+                }
+            );
         });
         timer.setRepeats(false);
         timer.start();
