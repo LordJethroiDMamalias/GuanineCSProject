@@ -5,8 +5,11 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
+import javax.sound.sampled.*;
+import java.io.File;
 
 public class G1_Room1_PD4 extends JFrame {
+    private Clip clip;
 
     // ─────────────── SaveSystem hook ───────────────
     private static SaveSystem.SaveData saved;
@@ -22,8 +25,32 @@ public class G1_Room1_PD4 extends JFrame {
         new G1_Room1_PD4();
     });
 }
+    
+    public void playMusic() {
+    try {
+        File file = new File("music/IVy.wav");
+
+        AudioInputStream audio = AudioSystem.getAudioInputStream(file);
+
+        clip = AudioSystem.getClip();
+        clip.open(audio);
+        clip.loop(Clip.LOOP_CONTINUOUSLY);
+        clip.start();
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
+
+public void stopMusic() {
+    if (clip != null) {
+        clip.stop();
+        clip.close();
+    }
+}
 
     public G1_Room1_PD4() {
+        playMusic();
         // Load save FIRST
         saved = SaveSystem.loadGame("PD4");
         SaveSystem.startTimer(saved.timeSeconds);
@@ -101,19 +128,17 @@ public class G1_Room1_PD4 extends JFrame {
             setFocusable(true);
             addKeyListener(this);
 
-            Vine = new ImageIcon("G1_vines.png").getImage();
-            AGH  = new ImageIcon("G1_AGH.png").getImage();
-            blue1 = new ImageIcon("G1_blue1.png").getImage();
-            blue2 = new ImageIcon("G1_blue2.png").getImage();
-            blue3 = new ImageIcon("G1_blue3.png").getImage();
-            blue4 = new ImageIcon("G1_blue4.png").getImage();
-            pro1 = new ImageIcon("G1_pro1.png").getImage();
-            pro2 = new ImageIcon("G1_pro2.png").getImage();
-            pro3 = new ImageIcon("G1_pro3.png").getImage();
-            pro4 = new ImageIcon("G1_pro4.png").getImage();
-            Dead = new ImageIcon("G1_deads.png").getImage();
-            
-            
+            Vine  = new ImageIcon("images/G1_vines.png").getImage();
+AGH   = new ImageIcon("images/G1_AGH.png").getImage();
+blue1 = new ImageIcon("images/G1_blue1.png").getImage();
+blue2 = new ImageIcon("images/G1_blue2.png").getImage();
+blue3 = new ImageIcon("images/G1_blue3.png").getImage();
+blue4 = new ImageIcon("images/G1_blue4.png").getImage();
+pro1  = new ImageIcon("images/G1_pro1.png").getImage();
+pro2  = new ImageIcon("images/G1_pro2.png").getImage();
+pro3  = new ImageIcon("images/G1_pro3.png").getImage();
+pro4  = new ImageIcon("images/G1_pro4.png").getImage();
+Dead  = new ImageIcon("images/G1_deads.png").getImage();
 
             int w = 660 / colSize;
             int h = 660 / gridSize;
@@ -222,6 +247,12 @@ public class G1_Room1_PD4 extends JFrame {
                 promptCooldown = 30;
             }
         }
+        private void switchMap() {
+    stopMusic(); // 🔥 important
+    setContentPane(new G1_Room2_PD6());
+    revalidate();
+    repaint();
+}
 
         @Override
         protected void paintComponent(Graphics g) {
