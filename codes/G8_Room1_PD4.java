@@ -23,20 +23,28 @@ public class G8_Room1_PD4 implements KeyListener {
     int[] mapLayout;
     int characterPosition;
 
+    // --- ANIMATION ASSETS ---
+    private int walkFrame = 1; 
+    private int currentDirection = 1; // 0:Up, 1:Down, 2:Left, 3:Right
+    private ImageIcon[] upFrames = new ImageIcon[5];
+    private ImageIcon[] downFrames = new ImageIcon[5];
+    private ImageIcon[] leftFrames = new ImageIcon[5];
+    private ImageIcon[] rightFrames = new ImageIcon[5];
+    
     ImageIcon grass1, Fence, TRFence, TLFence, SFence, BRFence, BLFence;
-    ImageIcon pUp1, pDown1, pLeft1, pRight1;
     ImageIcon grassRed, bombIcon;
 
     boolean[] isRedTile;
     boolean[] hasBomb;
     ScheduledExecutorService bombScheduler;
+    javax.swing.Timer winTimer; // Reference to stop it on death
 
-    // --- MUSIC SYSTEM (Shared with PD6) ---
+    // --- MUSIC SYSTEM ---
     public static Clip bgmClip;
     public static String currentSong = "";
 
     public static void playMusic(String location) {
-        if (currentSong.equals(location)) return; // Keep playing if it's the same song
+        if (currentSong.equals(location)) return;
         try {
             stopMusic();
             File musicPath = new File(location);
@@ -58,7 +66,6 @@ public class G8_Room1_PD4 implements KeyListener {
         }
         currentSong = "";
     }
-    // ---------------------------------------
 
     public G8_Room1_PD4() {
         frame = new JFrame("Bomber - Room 1");
@@ -80,10 +87,13 @@ public class G8_Room1_PD4 implements KeyListener {
         BRFence = loadAndScale("images/G8_BRFence.png", cellW, cellH);
         BLFence = loadAndScale("images/G8_BLFence.png", cellW, cellH);
         
-        pDown1 = loadAndScale("images/G8_down1.png", cellW, cellH);
-        pUp1 = loadAndScale("images/G8_up1.png", cellW, cellH);
-        pLeft1 = loadAndScale("images/G8_left1.png", cellW, cellH);
-        pRight1 = loadAndScale("images/G8_right1.png", cellW, cellH);
+        // Load All 4 Walking Frames
+        for (int i = 1; i <= 4; i++) {
+            upFrames[i] = loadAndScale("images/up_" + i + ".png", cellW, cellH);
+            downFrames[i] = loadAndScale("images/down_" + i + ".png", cellW, cellH);
+            leftFrames[i] = loadAndScale("images/left_" + i + ".png", cellW, cellH);
+            rightFrames[i] = loadAndScale("images/right_" + i + ".png", cellW, cellH);
+        }
 
         setupMap();
     }
@@ -91,11 +101,11 @@ public class G8_Room1_PD4 implements KeyListener {
     private ImageIcon loadAndScale(String path, int w, int h) {
         try {
             ImageIcon icon = new ImageIcon(path);
-            if (icon.getIconWidth() == -1) {
-                if (path.contains("G8_")) icon = new ImageIcon(path.replace("G8_", ""));
-                else icon = new ImageIcon(path.replace("images/", "images/G8_"));
+            if (icon.getIconWidth() <= 0) {
+                String altPath = path.contains("G8_") ? path.replace("G8_", "") : path.replace("images/", "images/G8_");
+                icon = new ImageIcon(altPath);
             }
-            if (icon.getIconWidth() == -1) return null;
+            if (icon.getIconWidth() <= 0) return null;
             return new ImageIcon(icon.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH));
         } catch (Exception e) { return null; }
     }
@@ -130,11 +140,10 @@ public class G8_Room1_PD4 implements KeyListener {
             }
         }
         characterPosition = 60; 
-        characterLabels[characterPosition].setIcon(pDown1);
+        characterLabels[characterPosition].setIcon(downFrames[1]);
     }
 
     public void setFrame() {
-        // Start Exploration Music
         playMusic("music/GIGGLEBOT3000.wav");
 
         layeredPane = new JLayeredPane();
@@ -172,18 +181,44 @@ public class G8_Room1_PD4 implements KeyListener {
         SwingUtilities.invokeLater(() -> frame.requestFocusInWindow());
     }
 
-    private void moveCharacter(int target, ImageIcon icon) {
+    private void moveCharacter(int target, int dir) {
         if (dialog.isVisible()) return; 
         if (target < 0 || target >= mapWidth * mapHeight || mapLayout[target] != 0) return; 
 
+        // Update animation logic
+        currentDirection = dir;
+        walkFrame = (walkFrame % 4) + 1;
+        
+        ImageIcon nextIcon = switch(dir) {
+            case 0 -> upFrames[walkFrame];
+            case 2 -> leftFrames[walkFrame];
+            case 3 -> rightFrames[walkFrame];
+            default -> downFrames[walkFrame];
+        };
+
         characterLabels[characterPosition].setIcon(null);
-        characterLabels[target].setIcon(icon);
+        characterLabels[target].setIcon(nextIcon);
         characterPosition = target;
 
+        checkDeath();
+    }
+
+    private void checkDeath() {
         if (hasBomb[characterPosition]) {
-            if (bombScheduler != null) bombScheduler.shutdownNow();
-            dialog.show(layeredPane, new String[]{"BOOM!", "Game Over!"}, null, new Runnable[]{() -> System.exit(0)}, mapWidth, mapHeight, null);
+            stopTimers();
+            dialog.show(layeredPane, new String[]{"BOOM!", "You were caught in the blast...", "Try again!"}, 
+                null, null, mapWidth, mapHeight, this::restartRoom);
         }
+    }
+
+    private void stopTimers() {
+        if (bombScheduler != null) bombScheduler.shutdownNow();
+        if (winTimer != null) winTimer.stop();
+    }
+
+    private void restartRoom() {
+        frame.dispose();
+        new G8_Room1_PD4().setFrame();
     }
 
     private void startBombLogic() {
@@ -207,7 +242,7 @@ public class G8_Room1_PD4 implements KeyListener {
                             isRedTile[idx] = false;
                             hasBomb[idx] = true;
                             tiles[idx].setIcon(bombIcon);
-                            if (characterPosition == idx) moveCharacter(idx, (ImageIcon)characterLabels[idx].getIcon());
+                            if (characterPosition == idx) checkDeath();
                         });
                         Thread.sleep(1000);
                         SwingUtilities.invokeLater(() -> {
@@ -221,9 +256,8 @@ public class G8_Room1_PD4 implements KeyListener {
     }
 
     private void startWinTimer() {
-        javax.swing.Timer timer = new javax.swing.Timer(30000, e -> {
-            if (bombScheduler != null) bombScheduler.shutdownNow();
-
+        winTimer = new javax.swing.Timer(30000, e -> {
+            stopTimers();
             dialog.show(layeredPane, 
                 new String[]{"VICTORY!",
                     "Looks like you survived the bombs, Heh, Lets see you battle me.",
@@ -237,8 +271,8 @@ public class G8_Room1_PD4 implements KeyListener {
                 }
             );
         });
-        timer.setRepeats(false);
-        timer.start();
+        winTimer.setRepeats(false);
+        winTimer.start();
     }
 
     @Override
@@ -246,10 +280,11 @@ public class G8_Room1_PD4 implements KeyListener {
         int key = e.getKeyCode();
         int row = characterPosition / mapWidth;
         int col = characterPosition % mapWidth;
-        if ((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_D) && col < mapWidth - 1) moveCharacter(characterPosition + 1, pRight1);
-        else if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_A) && col > 0) moveCharacter(characterPosition - 1, pLeft1);
-        else if ((key == KeyEvent.VK_DOWN || key == KeyEvent.VK_S) && row < mapHeight - 1) moveCharacter(characterPosition + mapWidth, pDown1);
-        else if ((key == KeyEvent.VK_UP || key == KeyEvent.VK_W) && row > 0) moveCharacter(characterPosition - mapWidth, pUp1);
+        
+        if ((key == KeyEvent.VK_RIGHT || key == KeyEvent.VK_D) && col < mapWidth - 1) moveCharacter(characterPosition + 1, 3);
+        else if ((key == KeyEvent.VK_LEFT || key == KeyEvent.VK_A) && col > 0) moveCharacter(characterPosition - 1, 2);
+        else if ((key == KeyEvent.VK_DOWN || key == KeyEvent.VK_S) && row < mapHeight - 1) moveCharacter(characterPosition + mapWidth, 1);
+        else if ((key == KeyEvent.VK_UP || key == KeyEvent.VK_W) && row > 0) moveCharacter(characterPosition - mapWidth, 0);
     }
 
     @Override public void keyTyped(KeyEvent e) {}
