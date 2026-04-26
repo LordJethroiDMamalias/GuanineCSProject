@@ -97,19 +97,19 @@ public class G7_Room2_PD6 implements KeyListener {
         layers.setBounds(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
         frame.setContentPane(layers);
 
-        imgPlayerUp    = safeIcon("images/player_up.png",    TILE, TILE, Color.BLUE);
-        imgPlayerDown  = safeIcon("images/player_down.png",  TILE, TILE, Color.BLUE);
-        imgPlayerLeft  = safeIcon("images/player_left.png",  TILE, TILE, Color.BLUE);
-        imgPlayerRight = safeIcon("images/player_right.png", TILE, TILE, Color.BLUE);
-        imgWall        = safeIcon("images/wall.png",         TILE, TILE, Color.DARK_GRAY);
-        imgNpc         = safeIcon("images/npc2.png",         TILE, TILE, Color.GREEN);
-        imgEnemy       = safeIcon("images/npc3.png",         TILE, TILE, Color.RED);
-        imgFloor       = safeIcon("images/floor2.png",       TILE, TILE, Color.LIGHT_GRAY);
-        imgChip        = safeIcon("images/chip.png",         32,   32,   Color.YELLOW);
+        imgPlayerUp    = safeIcon("/Images/G7_player_up.png", TILE, TILE, Color.BLUE);
+        imgPlayerDown  = safeIcon("/Images/G7_player_down.png", TILE, TILE, Color.BLUE);
+        imgPlayerLeft  = safeIcon("/Images/G7_player_left.png", TILE, TILE, Color.BLUE);
+        imgPlayerRight = safeIcon("/Images/G7_player_right.png", TILE, TILE, Color.BLUE);
+        imgWall        = safeIcon("/Images/G7_wall.png", TILE, TILE, Color.DARK_GRAY);
+        imgNpc         = safeIcon("/Images/G7_npc2.png", TILE, TILE, Color.GREEN);
+        imgEnemy       = safeIcon("/Images/G7_ryan.png", TILE, TILE, Color.RED);
+        imgFloor       = safeIcon("/Images/G7_floor2.png", TILE, TILE, Color.LIGHT_GRAY);
+        imgChip        = safeIcon("/Images/G7_chip.png", 32, 32, Color.YELLOW);
 
-        assetMap.put('A', new AssetInfo(2, 3, safeIcon("images/assetA.png", TILE*2, TILE*3, Color.MAGENTA)));
-        assetMap.put('B', new AssetInfo(3, 3, safeIcon("images/assetB.png", TILE*3, TILE*3, Color.ORANGE)));
-        assetMap.put('C', new AssetInfo(5, 2, safeIcon("images/assetC.png", TILE*5, TILE*2, Color.CYAN)));
+        assetMap.put('A', new AssetInfo(2, 3, safeIcon("/Images/G7_assetA.png", TILE*2, TILE*3, Color.MAGENTA)));
+        assetMap.put('B', new AssetInfo(3, 3, safeIcon("/Images/G7_assetB.png", TILE*3, TILE*3, Color.ORANGE)));
+        assetMap.put('C', new AssetInfo(5, 2, safeIcon("/Images/G7_assetC.png", TILE*5, TILE*2, Color.CYAN)));
 
         coins = G7_Room1_PD4.carriedCoins;
         if (coins <= 0) coins = 100;
@@ -608,7 +608,7 @@ public class G7_Room2_PD6 implements KeyListener {
 
         // Start the battle with a background image and the boss name
         // Adjust the path to your actual background image (e.g., "/Images/G7_boss_bg.png")
-        battle.start(frame, "images/G7_boss_bg.png", "RYAN");
+        battle.start(frame, "Images/G7_boss_bg.png", "RYAN");
 
         // Timer to check when the battle ends
         javax.swing.Timer t = new javax.swing.Timer(500, e -> {
