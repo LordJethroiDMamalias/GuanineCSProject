@@ -149,7 +149,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
         // was (50,300), (350,420), (600,200)
         items.add(new QuestItem( 41, 330, "H2 + O2 -> H2O (ex: 1,1,1)",          "2,1,2"));
         items.add(new QuestItem(289, 462, "N2 + H2 -> NH3 (ex: 1,1,1)",           "1,3,2"));
-        items.add(new QuestItem(495, 220, "CH4 + O2 -> CO2 + H2O (ex: 1,1,1,1)", "1,2,1,2"));
+        items.add(new QuestItem(495, 220, "CH4 + O2 -> CO2 + H2O ", "1,2,1,2"));
 
         timer.start();
     }
