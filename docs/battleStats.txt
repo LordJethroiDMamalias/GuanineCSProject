@@ -1,0 +1,26 @@
+# Battle Stats File
+# Format: Name|STATS:HP:X,ATK:X,DEF:X|FLAVOR:text|FLAVOR_LOW:text|PASSIVE:description|CHECK:description
+
+IVy|STATS:HP:100,ATK:8,DEF:0|FLAVOR:IVy lashes out with thorny vines!|FLAVOR_LOW:[Enemy]'s poison starts to lose potency. Keep fighting.|PASSIVE:Poison Ivy - Attacks inflict POISON (2-4 dmg/turn for 1 turn). Reapplying adds +1 duration.|CHECK:She loves to deceive her enemies. Don't fall for her tricks.
+
+Rainity|STATS:HP:85,ATK:12,DEF:3|FLAVOR:Rainity strikes with obsessive precision!|FLAVOR_LOW:[Enemy] starts to lose power. Keep fighting.|PASSIVE:Obsessive Focus - Deals +50% damage when your HP is below 50%.|CHECK:Her focus intensifies as you weaken. Don't let your guard down.
+
+Celene|STATS:HP:110,ATK:10,DEF:5|FLAVOR:The dual personality shifts restlessly...|FLAVOR_LOW:Cel(ene/ora) is losing control over herself. Keep fighting.|PASSIVE:State Swap - Alternates each turn: Celene (+5 DEF, -5 ATK) or Celora (+5 ATK, -5 DEF).|CHECK:Two personalities trapped in one body, fighting for control, due to the nite's influence.
+
+Jetroids|STATS:HP:100,ATK:13,DEF:-4|FLAVOR:Jetroids' simultaneous trains of thought make you nauseous.|FLAVOR_LOW:[Enemy] is losing his imaginative power. Keep fighting.|PASSIVE:Alright Alright - Attacks twice per turn.|CHECK:This guy can't sit still. He attacks twice as fast, but he's surely the weakest in terms of defense. Don't flinch!
+
+Jarrelle|STATS:HP:120,ATK:11,DEF:4|FLAVOR:Jarrelle seethes with barely contained fury!|FLAVOR_LOW:[Enemy] begins to spiral. Keep fighting.|PASSIVE:Blind Rage - Gains 1 RAGE per hit taken (max 5). At 5 stacks, next attack deals +10 bonus damage.|CHECK:He gets really mad eventually, so don't be a fool to take his strong hits.
+
+Main|STATS:HP:100,ATK:10,DEF:3|FLAVOR:Main grins knowingly at the fourth wall...|FLAVOR_LOW:[Enemy] is getting bored. Keep fighting.|PASSIVE:Wall Breaker - Something random each turn: Swap HP, Skip turn, +4 ATK, or +2 DEF|CHECK:She's aware of her power. I don't know what to tell you man, good luck I guess.
+
+RYAN|STATS:HP:125,ATK:8,DEF:0|FLAVOR:RYAN glares with pure hatred!|FLAVOR_LOW:[Enemy] is feeling lucky. Keep fighting. Do NOT let this man heal.|PASSIVE:Pure Hatred - Every 10 HP lost grants +2 DEF. For Fun - At 10 HP or below, 5% chance to fully heal.|CHECK:He hates everyone, and he's going to hate you more if you don't defeat him in time. Also, I think he can fully heal and flip you over for fun.
+
+GIGGLEBOT3000|STATS:HP:95,ATK:14,DEF:2|FLAVOR:GIGGLEBOT3000 whirs menacingly!|FLAVOR_LOW:[Enemy] is overheating. Keep fighting.|PASSIVE:Repair Protocol - Heals 25% of damage dealt.|CHECK:His name was Reiyaughn or something. He heals off of damage dealt. Don't let him do that.
+
+Bin Izharfed|STATS:HP:80,ATK:10,DEF:3|FLAVOR:The group argues while attacking!|FLAVOR_LOW:[Enemy] starts to quarrel with each other even more. Keep fighting.|PASSIVE:Illusion - Below 50% HP: 20% chance to negate incoming damage.|CHECK:Three people combined into a monster, for real. Keep fighting even if you miss.
+
+Don Malek|STATS:HP:130,ATK:12,DEF:5|FLAVOR:Don Malek raises his glass mockingly!|FLAVOR_LOW:[Enemy] is getting desperate. Keep fighting.|PASSIVE:Final Swig - Below 50% HP (once): Heals 15% max HP and gains +6 DEF.|CHECK:He fights harder when cornered. Chop chop.
+
+Jardenito|STATS:HP:100,ATK:10,DEF:3|FLAVOR:I'm evil, really evil. You have to save me by defeating me.|FLAVOR_LOW:YO! STOP HURTING ME FOR REAL! Wait, I mean, HURT ME FOR REAL?|PASSIVE:I don't have a passive, my friend. I'm still evil, by the way.|CHECK:I'm evil, my friend. Purify my soul by beating the nite out of me.
+
+Ma'am Kath|STATS:HP:300,ATK:18,DEF:-5|FLAVOR:Ma'am Kath watches you with quiet, terrifying authority.|FLAVOR_LOW:Ma'am Kath's patience is running out. This is your last chance.|PASSIVE:None yet. But don't let your guard down.|CHECK:The final boss. She has seen everything, graded everything, and she is not impressed. Survive long enough to change her mind.
