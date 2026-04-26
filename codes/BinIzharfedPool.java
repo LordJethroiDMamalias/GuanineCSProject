@@ -128,7 +128,7 @@ public class BinIzharfedPool implements QuestionPool.Pool {
           "Specifically Modern Standard Arabic (MSA); regional dialects also spoken", "n" },
         { "What is the official religion of Saudi Arabia?",
           "islam", "Islam",
-          "Saudi Arabia is the birthplace of Islam and home to its two holiest cities", "n" },
+          "It is one of the world’s major monotheistic religions, practiced widely in the Middle East.", "n" },
         { "What is the currency of Saudi Arabia?",
           "riyal", "Saudi Riyal (SAR)",
           "Also spelled Rial; its code is SAR", "n" },
