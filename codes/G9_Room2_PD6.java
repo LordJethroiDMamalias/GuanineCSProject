@@ -175,7 +175,7 @@ public class G9_Room2_PD6 implements KeyListener {
                 inv[0] = mapTrash[i];
                 itemsHeld = 1;
                 mapTrash[i] = -1; 
-                dialog.show(layeredPane, new String[]{"Picked up trash!"}, null, null, mapW, mapH);
+                dialog.show(layeredPane, new String[]{"[You've picked up trash!]"}, null, null, mapW, mapH);
                 renderEntities();
                 return; 
             }
@@ -187,10 +187,10 @@ public class G9_Room2_PD6 implements KeyListener {
         talkedGrandma = true; 
         saveProgress();
         String[] lines = {
-            "LISTEN CAREFULLY KID.",
-            "RED BIN = NONBIO | GREEN BIN = BIO | BLUE BIN = RECYCLABLES",
-            "IF YOU MESS UP YOU'LL HEAR FROM ME. ALSO..",
-            "IF YOU FIND SOMEONE AROUND MY AGE HERE.. LET ME KNOW. THAT GUY'S A PAIN TO DEAL WITH...",
+            "Listen carefully kid.",
+            "Red bin = NonBio | Green bin = Bio | Blue bin = Recyclables",
+            "If you mess up you'll hear from me. Also..",
+            "If you find someone around my age here.. let me know. That guy's a pain to deal with...",
         };
         SwingUtilities.invokeLater(() -> dialog.show(layeredPane, lines, null, null, mapW, mapH));
         return;
@@ -199,9 +199,9 @@ public class G9_Room2_PD6 implements KeyListener {
     // 3. Grandpa
     if (targetPos == grandpaPos) {
         dialog.show(layeredPane, new String[]{
-            "EUGH. KIDS THESE DAYS...",
-            "HAVE YOU SEEN MY WIFE?",
-            "I THINK I'M LOST."
+            "Eugh. Kids these days...",
+            "Have you seen my wife?",
+            "I think I'm lost."
         }, null, null, mapW, mapH);
         return;
     }
@@ -407,15 +407,15 @@ public class G9_Room2_PD6 implements KeyListener {
         wrongKeyCount++;
         if (isFirstTimeM && isArrow) {
             wrongKeyCount = 0; isFirstTimeM = false;
-            JOptionPane.showMessageDialog(frame, "USE WASD FOR MOVEMENT.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(frame, "Use WASD for movement.", "Input Error", JOptionPane.WARNING_MESSAGE);
             frame.requestFocusInWindow();
         } else if (isFirstTimeI && !isArrow && !isWASD && !isSpace) {
             wrongKeyCount = 0; isFirstTimeI = false;
-            JOptionPane.showMessageDialog(frame, "USE SPACEBAR TO INTERACT.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(frame, "Use spacebar to interact.", "Input Error", JOptionPane.WARNING_MESSAGE);
             frame.requestFocusInWindow();
         } else if (wrongKeyCount == 5) {
             wrongKeyCount = 0;
-            JOptionPane.showMessageDialog(frame, "DON'T FORGET TO USE WASD FOR MOVEMENT AND SPACEBAR TO INTERACT.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(frame, "Don't forget to use WASD for movement and spacebar to interact.", "Input Error", JOptionPane.WARNING_MESSAGE);
             frame.requestFocusInWindow();
         }
     } else {
