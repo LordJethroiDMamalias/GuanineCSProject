@@ -144,13 +144,13 @@ Dead  = new ImageIcon("images/G1_deads.png").getImage();
             int h = 660 / gridSize;
 
             for (int i = 0; i < 4; i++) {
-                walkUp[i]    = new ImageIcon("pixil-up_" + (i+1) + ".png").getImage()
+                walkUp[i]    = new ImageIcon("up_" + (i+1) + ".png").getImage()
                                          .getScaledInstance(w, h, Image.SCALE_SMOOTH);
-                walkDown[i]  = new ImageIcon("pixil-down_" + (i+1) + ".png").getImage()
+                walkDown[i]  = new ImageIcon("down_" + (i+1) + ".png").getImage()
                                          .getScaledInstance(w, h, Image.SCALE_SMOOTH);
-                walkLeft[i]  = new ImageIcon("pixil-left_" + (i+1) + ".png").getImage()
+                walkLeft[i]  = new ImageIcon("left_" + (i+1) + ".png").getImage()
                                          .getScaledInstance(w, h, Image.SCALE_SMOOTH);
-                walkRight[i] = new ImageIcon("pixil-right_" + (i+1) + ".png").getImage()
+                walkRight[i] = new ImageIcon("right_" + (i+1) + ".png").getImage()
                                          .getScaledInstance(w, h, Image.SCALE_SMOOTH);
             }
 
