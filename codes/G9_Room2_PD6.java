@@ -86,22 +86,22 @@ public class G9_Room2_PD6 implements KeyListener {
 
         int tw = frW / mapW;
         int th = frH / mapH;
-        int cw = (int)(tw * 0.6); 
-        int ch = (int)(th * 0.6);
+        int cw = (int)(tw * 1); 
+        int ch = (int)(th * 1);
 
-        pStand = scale("images/G9_pFront.png", cw, ch);
-        pFrontW = scale("images/G9_pFront.png", cw, ch);
-        pFrontW1 = scale("images/G9_pFrontLW.png", cw, ch);
-        pFrontW2 = scale("images/G9_pFrontRW.png", cw, ch);
-        pBack = scale("images/G9_pBack.png", cw, ch);
-        pBack1 = scale("images/G9_pBack1.png", cw, ch);
-        pBack2 = scale("images/G9_pBack2.png", cw, ch);
-        pLeft = scale("images/G9_pLeft.png", cw, ch);
-        pLeft1 = scale("images/G9_pLeft1.png", cw, ch);
-        pLeft2 = scale("images/G9_pLeft2.png", cw, ch);
-        pRight = scale("images/G9_pRight.png", cw, ch);
-        pRight1 = scale("images/G9_pRight1.png", cw, ch);
-        pRight2 = scale("images/G9_pRight2.png", cw, ch);
+        pStand = scale("images/down_1.png", cw, ch);
+        pFrontW = scale("images/down_3.png", cw, ch);
+        pFrontW1 = scale("images/down_2.png", cw, ch);
+        pFrontW2 = scale("images/down_3.png", cw, ch);
+        pBack = scale("images/up_1.png", cw, ch);
+        pBack1 = scale("images/up_2.png", cw, ch);
+        pBack2 = scale("images/up_4.png", cw, ch);
+        pLeft = scale("images/left_1.png", cw, ch);
+        pLeft1 = scale("images/left_2.png", cw, ch);
+        pLeft2 = scale("images/left_4.png", cw, ch);
+        pRight = scale("images/right_1.png", cw, ch);
+        pRight1 = scale("images/right_2.png", cw, ch);
+        pRight2 = scale("images/right_4.png", cw, ch);
         
         grandma = scale("images/G9_grammy.png", tw, th);
         grandpa = scale("images/G9_grandpa.png", tw, th);
@@ -175,7 +175,7 @@ public class G9_Room2_PD6 implements KeyListener {
                 inv[0] = mapTrash[i];
                 itemsHeld = 1;
                 mapTrash[i] = -1; 
-                dialog.show(layeredPane, new String[]{"[You've picked up trash!]"}, null, null, mapW, mapH);
+                dialog.show(layeredPane, new String[]{"Picked up trash!"}, null, null, mapW, mapH);
                 renderEntities();
                 return; 
             }
@@ -187,10 +187,10 @@ public class G9_Room2_PD6 implements KeyListener {
         talkedGrandma = true; 
         saveProgress();
         String[] lines = {
-            "Listen carefully kid.",
-            "Red bin = NonBio | Green bin = Bio | Blue bin = Recyclables",
-            "If you mess up you'll hear from me. Also..",
-            "If you find someone around my age here.. let me know. That guy's a pain to deal with...",
+            "LISTEN CAREFULLY KID.",
+            "RED BIN = NONBIO | GREEN BIN = BIO | BLUE BIN = RECYCLABLES",
+            "IF YOU MESS UP YOU'LL HEAR FROM ME. ALSO..",
+            "IF YOU FIND SOMEONE AROUND MY AGE HERE.. LET ME KNOW. THAT GUY'S A PAIN TO DEAL WITH...",
         };
         SwingUtilities.invokeLater(() -> dialog.show(layeredPane, lines, null, null, mapW, mapH));
         return;
@@ -199,9 +199,9 @@ public class G9_Room2_PD6 implements KeyListener {
     // 3. Grandpa
     if (targetPos == grandpaPos) {
         dialog.show(layeredPane, new String[]{
-            "Eugh. Kids these days...",
-            "Have you seen my wife?",
-            "I think I'm lost."
+            "EUGH. KIDS THESE DAYS...",
+            "HAVE YOU SEEN MY WIFE?",
+            "I THINK I'M LOST."
         }, null, null, mapW, mapH);
         return;
     }
@@ -407,15 +407,15 @@ public class G9_Room2_PD6 implements KeyListener {
         wrongKeyCount++;
         if (isFirstTimeM && isArrow) {
             wrongKeyCount = 0; isFirstTimeM = false;
-            JOptionPane.showMessageDialog(frame, "Use WASD for movement.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(frame, "USE WASD FOR MOVEMENT.", "Input Error", JOptionPane.WARNING_MESSAGE);
             frame.requestFocusInWindow();
         } else if (isFirstTimeI && !isArrow && !isWASD && !isSpace) {
             wrongKeyCount = 0; isFirstTimeI = false;
-            JOptionPane.showMessageDialog(frame, "Use spacebar to interact.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(frame, "USE SPACEBAR TO INTERACT.", "Input Error", JOptionPane.WARNING_MESSAGE);
             frame.requestFocusInWindow();
         } else if (wrongKeyCount == 5) {
             wrongKeyCount = 0;
-            JOptionPane.showMessageDialog(frame, "Don't forget to use WASD for movement and spacebar to interact.", "Input Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(frame, "DON'T FORGET TO USE WASD FOR MOVEMENT AND SPACEBAR TO INTERACT.", "Input Error", JOptionPane.WARNING_MESSAGE);
             frame.requestFocusInWindow();
         }
     } else {
