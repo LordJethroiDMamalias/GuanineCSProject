@@ -108,7 +108,7 @@ package codes;
             tKite = scale("images/G9_torn kite.png", cw, ch);
             tBear = scale("images/G9_teddy.png", cw, ch);
 
-            playMusic("music/BindddddIzharfed.wav");
+            playMusic("music/Bin Izharfed.wav");
 
             gridSlots = new JLabel[mapW * mapH];
             toys = new JLabel[mapW * mapH];
