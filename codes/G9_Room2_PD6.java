@@ -74,9 +74,9 @@ public class G9_Room2_PD6 implements KeyListener {
         layeredPane = new JLayeredPane();
         cleared = new boolean[121]; 
         
-        ImageIcon mapImg = new ImageIcon("images/PDs game/map2/G9_map2_updated.png");
+        ImageIcon mapImg = new ImageIcon("images/G9_map2_updated.png");
         background = new JLabel(new ImageIcon(mapImg.getImage().getScaledInstance(frW, frH, Image.SCALE_DEFAULT)));
-        ImageIcon panelImg = new ImageIcon("images/PDs game/map2/G9_cutscn1.png");
+        ImageIcon panelImg = new ImageIcon("images/G9_cutscn1.png");
         cutscene = new JLabel(new ImageIcon(panelImg.getImage().getScaledInstance(cutW, cutH, Image.SCALE_DEFAULT)));
         
         if (mapImg.getImageLoadStatus() == MediaTracker.COMPLETE) {
@@ -89,22 +89,22 @@ public class G9_Room2_PD6 implements KeyListener {
         int cw = (int)(tw * 0.6); 
         int ch = (int)(th * 0.6);
 
-        pStand = scale("images/PDs game/univ/G9_pFront.png", cw, ch);
-        pFrontW = scale("images/PDs game/univ/G9_pFront.png", cw, ch);
-        pFrontW1 = scale("images/PDs game/univ/G9_pFrontLW.png", cw, ch);
-        pFrontW2 = scale("images/PDs game/univ/G9_pFrontRW.png", cw, ch);
-        pBack = scale("images/PDs game/univ/G9_pBack.png", cw, ch);
-        pBack1 = scale("images/PDs game/univ/G9_pBack1.png", cw, ch);
-        pBack2 = scale("images/PDs game/univ/G9_pBack2.png", cw, ch);
-        pLeft = scale("images/PDs game/univ/G9_pLeft.png", cw, ch);
-        pLeft1 = scale("images/PDs game/univ/G9_pLeft1.png", cw, ch);
-        pLeft2 = scale("images/PDs game/univ/G9_pLeft2.png", cw, ch);
-        pRight = scale("images/PDs game/univ/G9_pRight.png", cw, ch);
-        pRight1 = scale("images/PDs game/univ/G9_pRight1.png", cw, ch);
-        pRight2 = scale("images/PDs game/univ/G9_pRight2.png", cw, ch);
+        pStand = scale("images/G9_pFront.png", cw, ch);
+        pFrontW = scale("images/G9_pFront.png", cw, ch);
+        pFrontW1 = scale("images/G9_pFrontLW.png", cw, ch);
+        pFrontW2 = scale("images/G9_pFrontRW.png", cw, ch);
+        pBack = scale("images/G9_pBack.png", cw, ch);
+        pBack1 = scale("images/G9_pBack1.png", cw, ch);
+        pBack2 = scale("images/G9_pBack2.png", cw, ch);
+        pLeft = scale("images/G9_pLeft.png", cw, ch);
+        pLeft1 = scale("images/G9_pLeft1.png", cw, ch);
+        pLeft2 = scale("images/G9_pLeft2.png", cw, ch);
+        pRight = scale("images/G9_pRight.png", cw, ch);
+        pRight1 = scale("images/G9_pRight1.png", cw, ch);
+        pRight2 = scale("images/G9_pRight2.png", cw, ch);
         
-        grandma = scale("images/PDs game/map2/G9_grammy.png", tw, th);
-        grandpa = scale("images/PDs game/map2/G9_grandpa.png", tw, th);
+        grandma = scale("images/G9_grammy.png", tw, th);
+        grandpa = scale("images/G9_grandpa.png", tw, th);
 
         // playMusic("dungeon9.wav");
         mapLayout = new int[]{
@@ -147,7 +147,7 @@ public class G9_Room2_PD6 implements KeyListener {
                         break;
                     }
                 }
-                gridSlots[i].setIcon(trashPresent ? scale("images/PDs game/univ/G9_trash.png", 30, 30) : null);
+                gridSlots[i].setIcon(trashPresent ? scale("images/G9_trash.png", 30, 30) : null);
             }
         }
     }
@@ -244,7 +244,7 @@ public class G9_Room2_PD6 implements KeyListener {
                 // THEN start the battle after cutscene ends
                 SwingUtilities.invokeLater(() -> {
                     G9_Room1_PD4.stopMusic();
-                    battle.start(frame, "images/PDs game/map2/G9_minibossBG.png", "Bin Izharfed");
+                    battle.start(frame, "images/G9_minibossBG.png", "Bin Izharfed");
                 });
 
                 new javax.swing.Timer(500, new ActionListener() {
@@ -252,12 +252,12 @@ public class G9_Room2_PD6 implements KeyListener {
                     public void actionPerformed(ActionEvent ev) {
                         if (!Battle.paused) {
                             ((Timer) ev.getSource()).stop();
-
+                            
                             if (battle.hp > 0) {
                                 miniDefeat = true;
                                 SaveSystem.markDefeated("Bin Izharfed");
                                 saveProgress();
-                                ImageIcon victoryImg = new ImageIcon("images/PDs game/map2/G9_cutscn2.png");
+                                ImageIcon victoryImg = new ImageIcon("images/G9_cutscn2.png");
                                 cutscene.setIcon(new ImageIcon(victoryImg.getImage()
                                     .getScaledInstance(cutW, cutH, Image.SCALE_DEFAULT)));
                                 setBlackOverlay(true); 
@@ -272,6 +272,7 @@ public class G9_Room2_PD6 implements KeyListener {
                                 battle = new Battle();                                  
                                 direction = "right";
                                 renderEntities();
+                                G9_Room1_PD4.playMusic("music/Bin Izharfed.wav");
                             }
                         }
                     }
