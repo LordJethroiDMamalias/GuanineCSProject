@@ -687,7 +687,7 @@ public class G10_Room2_PD6 extends JPanel implements KeyListener {
     @Override public void keyTyped(KeyEvent e)    {}
 
     public static void main(String[] args) {
-        JFrame f = new JFrame("Boss Room \u2014 Ma\u2019am Kath");
+        JFrame f = new JFrame("Gambler\u2019s Hall");
         G10_Room2_PD6 room = new G10_Room2_PD6();
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.add(room);
