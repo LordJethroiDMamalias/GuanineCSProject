@@ -186,7 +186,7 @@ for (int i = 0; i < mapLayout.length; i++) {
                     ImageIcon anim = getAnimation();
                     if (onStairs) {
                         gridSlots[i].setVerticalAlignment(JLabel.TOP);
-                        gridSlots[i].setIcon(padDown(anim, 20));
+                        gridSlots[i].setIcon(padDown(anim, 3));
                     } else {
                         gridSlots[i].setVerticalAlignment(JLabel.CENTER);
                         gridSlots[i].setIcon(anim);
