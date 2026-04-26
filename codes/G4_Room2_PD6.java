@@ -352,14 +352,14 @@ public class G4_Room2_PD6 implements KeyListener {
                         "...",
                         "then let's get started, shall we?"
                     };
-                    String[] lines   = {"HEY THERE KID", "ENJOY THE VIEW?"};
+                    String[] lines   = {"HEY THERE KID", "EXPECTING OTHER PEOPLE?", "MY FRIEND ALREADY ATE THEM ALL HAHAHAHAHAHA", "ENJOY THE VIEW?"};
                     String[] options = {"Yes", "I HATE IT."};
                     Runnable[] branches = {
                         () -> {
                             String[] current = {
                                 "HAHAHA YOU'RE FUNNY",
-                                "THESE BLACK CLOUDS ARE THE RESULT OF MY INFLICTED TORMENT TOWARDS OTHERS",
-                                "AND I DO THAT FOR FUN",
+                                "THESE BLACK CLOUDS ARE THE RESULT OF MY INFLICTED TORMENT TOWARDS THEM",
+                                "THIS IS WHAT'S LEFT OF THEM HAHAHAHAHAHA",
                                 "ANYWAY, I KNOW WHAT YOU'RE UP TO"
                             };
                             String[] yes = new String[current.length + regardless.length];
