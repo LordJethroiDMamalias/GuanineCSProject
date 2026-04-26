@@ -1,5 +1,6 @@
 package codes;
 
+import static codes.G8_Room1_PD4.stopMusic;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -14,6 +15,7 @@ abstract class MapEntity {
     public abstract void onInteract(G8_Dialog dialog, JLayeredPane lp, int w, int h);
 }
 
+// ── BushEvent ─────────────────────────────────────────────────────────────────
 class BushEvent extends MapEntity {
     public BushEvent(int position) { super(position); }
     @Override
@@ -22,18 +24,22 @@ class BushEvent extends MapEntity {
     }
 }
 
-// ── Monster (Gigglebot) ───────────────────────────────────────────────────────
+// ── Monster ───────────────────────────────────────────────────────────────────
 class Monster extends MapEntity {
     private ImageIcon icon;
     public Monster(int position, int tw, int th) {
         super(position);
+        // This looks specifically for the Gigglebot image
         this.icon = loadSafeIcon("images/G8_Gigglebot3000.png", tw, th);
     }
 
     private ImageIcon loadSafeIcon(String path, int w, int h) {
         try {
             ImageIcon temp = new ImageIcon(path);
-            if (temp.getIconWidth() <= 0) temp = new ImageIcon(path.replace("G8_", ""));
+            // Fallback: try without G8_ if the first path fails
+            if (temp.getIconWidth() <= 0 && path.contains("G8_")) {
+                temp = new ImageIcon(path.replace("G8_", ""));
+            }
             if (temp.getIconWidth() <= 0) return null; 
             return new ImageIcon(temp.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH));
         } catch (Exception e) { return null; }
@@ -47,29 +53,34 @@ class Monster extends MapEntity {
     @Override public void onInteract(G8_Dialog dialog, JLayeredPane lp, int w, int h) {}
 }
 
-// ── G8_Room2_PD6 Main Class ──────────────────────────────────────────────────
+// ── G8_Room2_PD6 ──────────────────────────────────────────────────────────────
 public class G8_Room2_PD6 implements KeyListener {
 
-    JFrame frame;
+    JFrame       frame;
     JLayeredPane layeredPane;
-    G8_Dialog dialog = new G8_Dialog();
-    Battle battle = new Battle();
+    G8_Dialog    dialog = new G8_Dialog();
+    Battle       battle = new Battle();
 
     JLabel[] characterLabels;
     JLabel[] monsterLabels; 
     int mapWidth = 11, mapHeight = 11;
     int frameWidth = 660, frameHeight = 660;
     public int[] mapLayout;
-    public int characterPosition;
+    public int   characterPosition;
 
-    int walkFrame = 0;
-    int direction = 1; // 0:Up, 1:Down, 2:Left, 3:Right
-    ImageIcon pUp1, pUp2, pDown1, pDown2, pLeft1, pLeft2, pRight1, pRight2, BGimage;
+    // Animation variables: cycles 1, 2, 3, 4
+    int walkFrame = 1; 
+    int direction = 1; 
+    ImageIcon[] upFrames = new ImageIcon[5];
+    ImageIcon[] downFrames = new ImageIcon[5];
+    ImageIcon[] leftFrames = new ImageIcon[5];
+    ImageIcon[] rightFrames = new ImageIcon[5];
+    ImageIcon BGimage;
 
-    Timer monsterTimer, gameTimer;
+    Timer   monsterTimer, gameTimer;
     Monster enemy;
-    int survivalTime = 30;
-    JLabel timerLabel;
+    int      survivalTime = 30;
+    JLabel  timerLabel;
     
     private JLabel cutscene;
     private boolean battleTriggered = false;
@@ -80,14 +91,14 @@ public class G8_Room2_PD6 implements KeyListener {
         int th = frameHeight / mapHeight;
 
         BGimage = loadSafeIcon("images/G8_PD6BG.png", frameWidth, frameHeight);
-        pDown1 = loadSafeIcon("images/G8_down1.png", tw, th);
-        pDown2 = loadSafeIcon("images/G8_down2.png", tw, th);
-        pUp1   = loadSafeIcon("images/G8_up1.png", tw, th);
-        pUp2   = loadSafeIcon("images/G8_up2.png", tw, th);
-        pLeft1 = loadSafeIcon("images/G8_left1.png", tw, th);
-        pLeft2 = loadSafeIcon("images/G8_left2.png", tw, th);
-        pRight1= loadSafeIcon("images/G8_right1.png", tw, th);
-        pRight2= loadSafeIcon("images/G8_right2.png", tw, th);
+        
+        // Load frames 1 through 4 for each direction
+        for (int i = 1; i <= 4; i++) {
+            upFrames[i]    = loadSafeIcon("images/up_" + i + ".png", tw, th);
+            downFrames[i]  = loadSafeIcon("images/down_" + i + ".png", tw, th);
+            leftFrames[i]  = loadSafeIcon("images/left_" + i + ".png", tw, th);
+            rightFrames[i] = loadSafeIcon("images/right_" + i + ".png", tw, th);
+        }
 
         mapLayout = new int[]{
             0,0,0,0,0,0,0,0,0,0,0,
@@ -110,17 +121,22 @@ public class G8_Room2_PD6 implements KeyListener {
         for (int i = 0; i < characterLabels.length; i++) {
             characterLabels[i] = new JLabel();
             characterLabels[i].setHorizontalAlignment(SwingConstants.CENTER);
+            if (i == characterPosition) {
+                characterLabels[i].setIcon(downFrames[1]); // Initial pose
+            }
             monsterLabels[i] = new JLabel();
             monsterLabels[i].setHorizontalAlignment(SwingConstants.CENTER);
         }
-        characterLabels[characterPosition].setIcon(pDown1);
     }
 
     private ImageIcon loadSafeIcon(String path, int w, int h) {
         try {
             ImageIcon icon = new ImageIcon(path);
-            if (icon.getIconWidth() <= 0 && path.contains("G8_")) 
-                icon = new ImageIcon(path.replace("G8_", ""));
+            // Check for G8_ prefix variation
+            if (icon.getIconWidth() <= 0) {
+                String altPath = path.contains("G8_") ? path.replace("G8_", "") : path.replace("images/", "images/G8_");
+                icon = new ImageIcon(altPath);
+            }
             if (icon.getIconWidth() <= 0) return null; 
             return new ImageIcon(icon.getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH));
         } catch (Exception e) { return null; }
@@ -134,34 +150,37 @@ public class G8_Room2_PD6 implements KeyListener {
         cutscene.setBounds(0, 0, frameWidth, frameHeight);
         cutscene.setVisible(false);
 
-        JPanel charGrid = new JPanel(new GridLayout(mapHeight, mapWidth));
-        charGrid.setBounds(0, 0, frameWidth, frameHeight);
-        charGrid.setOpaque(false);
-        for (JLabel lbl : characterLabels) charGrid.add(lbl);
-
+        // Monster layer - Ensure this is initialized early
         JPanel monsterGrid = new JPanel(new GridLayout(mapHeight, mapWidth));
         monsterGrid.setBounds(0, 0, frameWidth, frameHeight);
         monsterGrid.setOpaque(false);
         for (JLabel lbl : monsterLabels) monsterGrid.add(lbl);
 
+        // Character layer
+        JPanel charGrid = new JPanel(new GridLayout(mapHeight, mapWidth));
+        charGrid.setBounds(0, 0, frameWidth, frameHeight);
+        charGrid.setOpaque(false);
+        for (JLabel lbl : characterLabels) charGrid.add(lbl);
+
         JLabel background = new JLabel(BGimage);
         background.setBounds(0, 0, frameWidth, frameHeight);
 
-        layeredPane.add(background, JLayeredPane.DEFAULT_LAYER);
-        layeredPane.add(charGrid, JLayeredPane.PALETTE_LAYER);
-        layeredPane.add(monsterGrid, JLayeredPane.MODAL_LAYER);
-        layeredPane.add(cutscene, JLayeredPane.DRAG_LAYER); 
+        // STACKING ORDER: Background (0) -> Character (100) -> Monster (200) -> Cutscene (300)
+        layeredPane.add(background, Integer.valueOf(0));
+        layeredPane.add(charGrid, Integer.valueOf(100));
+        layeredPane.add(monsterGrid, Integer.valueOf(200));
+        layeredPane.add(cutscene, Integer.valueOf(300));
 
         frame.add(layeredPane);
         frame.addKeyListener(this);
         dialog.addKey(frame); 
 
         timerLabel = new JLabel("Survive: " + survivalTime + "s");
-        timerLabel.setFont(new Font("Monospaced", Font.BOLD, 22));
-        timerLabel.setForeground(Color.CYAN);
+        timerLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        timerLabel.setForeground(Color.WHITE);
         JPanel glass = (JPanel) frame.getGlassPane();
         glass.setVisible(true);
-        glass.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        glass.setLayout(new FlowLayout(FlowLayout.CENTER));
         glass.add(timerLabel);
 
         frame.pack();
@@ -169,13 +188,35 @@ public class G8_Room2_PD6 implements KeyListener {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
 
-        showWelcomeMessage();
+        // Brief delay before starting to ensure the window is actually rendered
+        Timer startDelay = new Timer(1000, e -> {
+            showWelcomeMessage();
+            startGameTimer();
+            startMonsterChase(); 
+        });
+        startDelay.setRepeats(false);
+        startDelay.start();
     }
 
     public void startMonsterChase() {
+        // Monster starts at index 12
         enemy = new Monster(12, frameWidth / mapWidth, frameHeight / mapHeight);
-        if (enemy.getIcon() != null) monsterLabels[12].setIcon(enemy.getIcon());
-        monsterTimer = new Timer(700, e -> moveMonster());
+        
+        if (enemy.getIcon() != null) {
+            monsterLabels[12].setIcon(enemy.getIcon());
+        } else {
+            // If the image is STILL missing, this RED box proves the code is working
+            monsterLabels[12].setOpaque(true);
+            monsterLabels[12].setBackground(Color.RED);
+            System.out.println("DEBUG: Monster image not found, showing red square.");
+        }
+        
+        // Force the UI to show the monster immediately
+        monsterLabels[12].revalidate();
+        monsterLabels[12].repaint();
+
+        if (monsterTimer != null) monsterTimer.stop();
+        monsterTimer = new Timer(800, e -> moveMonster());
         monsterTimer.start();
     }
 
@@ -191,25 +232,27 @@ public class G8_Room2_PD6 implements KeyListener {
 
         if (nextPos != mPos && nextPos >= 0 && nextPos < mapLayout.length && mapLayout[nextPos] != 0) {
             monsterLabels[mPos].setIcon(null);
+            monsterLabels[mPos].setOpaque(false);
             enemy.setPosition(nextPos);
-            monsterLabels[nextPos].setIcon(enemy.getIcon());
-            monsterLabels[nextPos].repaint();
+            
+            if (enemy.getIcon() != null) {
+                monsterLabels[nextPos].setIcon(enemy.getIcon());
+            } else {
+                monsterLabels[nextPos].setOpaque(true);
+                monsterLabels[nextPos].setBackground(Color.RED);
+            }
         }
 
-        if (enemy.getPosition() == characterPosition) {
-            stopGameLogic();
-            enemy.onCatch(dialog, layeredPane, mapWidth, mapHeight, this::restartRoom);
+        if (enemy != null && enemy.getPosition() == characterPosition) {
+            monsterTimer.stop(); 
+            gameTimer.stop();
+            Monster caughtEnemy = enemy;
+            enemy = null;
+            caughtEnemy.onCatch(dialog, layeredPane, mapWidth, mapHeight, () -> {
+                frame.dispose();
+                new G8_Room2_PD6().setFrame();
+            });
         }
-    }
-
-    private void stopGameLogic() {
-        if (monsterTimer != null) monsterTimer.stop();
-        if (gameTimer != null) gameTimer.stop();
-    }
-
-    private void restartRoom() {
-        frame.dispose();
-        new G8_Room2_PD6().setFrame();
     }
 
     @Override
@@ -236,11 +279,13 @@ public class G8_Room2_PD6 implements KeyListener {
                 boolean isWrapping = (Math.abs(move) == 1 && (nextPos / mapWidth != characterPosition / mapWidth));
                 if (!isWrapping) {
                     int tile = mapLayout[nextPos];
-                    if (tile == 3 && !battleTriggered) { triggerBossBattleSequence(); }
+                    if (tile == 3 && !battleTriggered) { triggerBossBattleSequence(nextPos); }
                     else if (tile != 0) {
                         characterLabels[characterPosition].setIcon(null);
                         characterPosition = nextPos;
-                        walkFrame = (walkFrame + 1) % 2;
+                        
+                        // Increment frame 1 -> 2 -> 3 -> 4 -> 1
+                        walkFrame = (walkFrame % 4) + 1;
                         updateCharacterIcon();
                     }
                 }
@@ -250,70 +295,69 @@ public class G8_Room2_PD6 implements KeyListener {
 
     private void updateCharacterIcon() {
         ImageIcon current = switch (direction) {
-            case 0 -> (walkFrame == 0) ? pUp1 : pUp2;
-            case 1 -> (walkFrame == 0) ? pDown1 : pDown2;
-            case 2 -> (walkFrame == 0) ? pLeft1 : pLeft2;
-            case 3 -> (walkFrame == 0) ? pRight1 : pRight2;
-            default -> pDown1;
+            case 0 -> upFrames[walkFrame];
+            case 1 -> downFrames[walkFrame];
+            case 2 -> leftFrames[walkFrame];
+            case 3 -> rightFrames[walkFrame];
+            default -> downFrames[1];
         };
-        characterLabels[characterPosition].setIcon(current);
-        characterLabels[characterPosition].repaint();
-    }
-
-    private void triggerBossBattleSequence() {
-        battleTriggered = true;
-        stopGameLogic();
-        
-        showCutscene("images/PDs game/map2/cutscn1.png", 4000, () -> {
-            G8_Room1_PD4.playMusic("music/GIGGLEBOT3000.wav");
-            battle.start(frame, "images/G8_PD6BG.png", "GIGGLEBOT3000");
-
-            Timer battleMonitor = new Timer(500, null);
-            battleMonitor.addActionListener(ev -> {
-                if (!Battle.paused) {
-                    battleMonitor.stop();
-                    if (battle.hp <= 0) handleVictory();
-                    else restartRoom();
-                }
-            });
-            battleMonitor.start();
-        });
-    }
-
-    private void handleVictory() {
-        saveProgress();
-        showCutscene("images/PDs game/map2/cutscn2.png", 5000, this::showVictoryDialog);
-    }
-
-    private void showCutscene(String path, int duration, Runnable onComplete) {
-        ImageIcon img = loadSafeIcon(path, frameWidth, frameHeight);
-        if (img != null) {
-            cutscene.setIcon(img);
-            cutscene.setVisible(true);
-            layeredPane.moveToFront(cutscene);
-            
-            Timer t = new Timer(duration, e -> {
-                ((Timer)e.getSource()).stop();
-                cutscene.setVisible(false);
-                onComplete.run();
-            });
-            t.setRepeats(false);
-            t.start();
+        // Safety check if images failed to load
+        if (current == null) {
+            characterLabels[characterPosition].setText("P"); // Placeholder
         } else {
-            onComplete.run();
+            characterLabels[characterPosition].setIcon(current);
         }
+    }
+
+    private void triggerBossBattleSequence(int pos) {
+        battleTriggered = true;
+        if (gameTimer != null) gameTimer.stop();
+        if (monsterTimer != null) monsterTimer.stop();
+        ImageIcon introImg = loadSafeIcon("images/PDs game/map2/cutscn1.png", frameWidth, frameHeight);
+        if (introImg != null) cutscene.setIcon(introImg);
+        cutscene.setVisible(true);
+        new Timer(500, e -> {
+            ((Timer) e.getSource()).stop();
+            cutscene.setVisible(false);
+            stopMusic();
+            G8_Room1_PD4.playMusic("music/GIGGLEBOT3000-boss.wav");
+            battle.start(frame, "images/G8_PD6BG.png", "GIGGLEBOT3000");
+            new Timer(500, ev -> {
+                if (!Battle.paused) {
+                    ((Timer) ev.getSource()).stop();
+                    if (battle.hp > 0) { 
+                        saveProgress();
+                        ImageIcon victoryImg = loadSafeIcon("images/PDs game/map2/cutscn2.png", frameWidth, frameHeight);
+                        if (victoryImg != null) cutscene.setIcon(victoryImg);
+                        cutscene.setVisible(true);
+                        new Timer(5000, end -> {
+                            ((Timer) end.getSource()).stop();
+                            cutscene.setVisible(false);
+                            showVictoryCutscene();
+                        }).start();
+                    } else {
+                        battleTriggered = false;
+                        battle = new Battle();
+                        characterLabels[characterPosition].setIcon(null);
+                        characterPosition = 65; 
+                        direction = 1;
+                        updateCharacterIcon();
+                        startGameTimer();
+                        startMonsterChase();
+                    }
+                }
+            }).start();
+        }).start();
     }
 
     public void showWelcomeMessage() {
         G8_Room1_PD4.playMusic("music/GIGGLEBOT3000.wav");
         dialog.show(layeredPane, new String[]{
-            "Welcome dear traveller, you have been trapped >:)",
-            "Here you must survive and run away from Gigglebot.",
+            "Welcome dear traveller, you have been trapped >:), ",
+            "Here you must survive and run away from Gigglebot",
+            "See what happens when you get near my minions!.",
             "GIGGLEBOT3000: ESCAPE IS ELECTRICALLY IMPROBABLE"
-        }, null, null, mapWidth, mapHeight, () -> {
-            startGameTimer();
-            startMonsterChase();
-        });
+        }, null, null, mapWidth, mapHeight, null);
     }
 
     public void startGameTimer() {
@@ -322,7 +366,7 @@ public class G8_Room2_PD6 implements KeyListener {
             survivalTime--;
             timerLabel.setText("Survive: " + survivalTime + "s");
             if (survivalTime <= 0) {
-                stopGameLogic();
+                gameTimer.stop(); monsterTimer.stop();
                 showSurvivedCutscene();
             }
         });
@@ -333,18 +377,17 @@ public class G8_Room2_PD6 implements KeyListener {
         dialog.show(layeredPane, new String[]{
             "You survived the onslaught!",
             "But something grabs you from behind...",
-            "GIGGLEBOT3000: SPECIMEN ACQUIRED. TRANSPORTING TO LAB."
-        }, null, null, mapWidth, mapHeight, () -> {
-            timerLabel.setText("");
-            triggerBossBattleSequence();
-        });
+            "GIGGLEBOT3000: SPECIMEN ACQUIRED. TRANSPORTING TO LAB.",
+            "Everything goes dark as you are dragged through a metal corridor.",
+            "You wake up... somewhere different. The lab."
+        }, null, null, mapWidth, mapHeight, () -> { timerLabel.setText(""); });
     }
 
-    private void showVictoryDialog() {
+    private void showVictoryCutscene() {
         dialog.show(layeredPane, new String[]{
             "GIGGLEBOT3000 sparks and collapses.",
             "Silence. Finally.",
-            "A helicopter arrives to take you to the clouds...",
+            "A door at the far end slides open, you see a helicopter and take it to the clouds...",
             "[END OF Gigglebot — next area loading...]"
         }, null, null, mapWidth, mapHeight, () -> {
             JOptionPane.showMessageDialog(frame, "PD6 complete!");
