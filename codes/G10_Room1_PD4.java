@@ -360,7 +360,7 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
             savedUserDir = System.getProperty("user.dir");
             System.setProperty("user.dir", PROJECT_ROOT);
 
-            battle.start(frame, "images/map2/TRY THIS.png", "Don Malek");
+            battle.start(frame, "images/G10_battleBG.png", "Don Malek");
             fixBattleBackground(frame);
 
             Timer poll = new Timer(300, null);
