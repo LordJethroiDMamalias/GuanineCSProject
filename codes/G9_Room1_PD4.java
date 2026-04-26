@@ -108,7 +108,7 @@ package codes;
             tKite = scale("images/G9_torn kite.png", cw, ch);
             tBear = scale("images/G9_teddy.png", cw, ch);
 
-            playMusic("music/Bin Izharfed.wav");
+            playMusic("music/BindddddIzharfed.wav");
 
             gridSlots = new JLabel[mapW * mapH];
             toys = new JLabel[mapW * mapH];
@@ -217,14 +217,14 @@ for (int i = 0; i < mapLayout.length; i++) {
                 wrongKeyCount++;
                 if (isFirstTimeM && isArrow) {
                     wrongKeyCount = 0; isFirstTimeM = false;
-                    throw new TooManyErrorsException("USE WASD FOR MOVEMENT.");
+                    throw new TooManyErrorsException("Use WASD for movement.");
                 } else if (isFirstTimeI && !isArrow && !isWASD && !isSpace) {
                     wrongKeyCount = 0; isFirstTimeI = false;
-                    throw new TooManyErrorsException("USE SPACEBAR TO INTERACT.");
+                    throw new TooManyErrorsException("Use Spacebar to interact.");
                 }
                 if (wrongKeyCount == 5) {
                     wrongKeyCount = 0;
-                    throw new TooManyErrorsException("DON'T FORGET TO USE WASD FOR MOVEMENT AND SPACEBAR TO INTERACT.");
+                    throw new TooManyErrorsException("Don't forget to use WASD for movement and Spacebar to interact.");
                 }
             } else {
                 wrongKeyCount = 0;
@@ -260,7 +260,7 @@ private void move(int dx, int dy, String dir) {
             return;
         } else if (atEdge && hasFinalGift==false) {
             dialog.show(layeredPane, new String[]{
-                "HEY, YOU THERE! CAN YOU HELP ME PLEASE?"
+                "Hey, you there! Can you help me please?"
             }, null, null, mapW, mapH);
         }
 
@@ -271,7 +271,7 @@ private void move(int dx, int dy, String dir) {
                     startNextMap();
                 } else {
                     dialog.show(layeredPane, new String[]{
-                        "HEY, YOU THERE! CAN YOU HELP ME PLEASE?"
+                        "Hey, you there! Can you help me please?"
                     }, null, null, mapW, mapH);
                 }
                 return;
@@ -292,7 +292,7 @@ private void move(int dx, int dy, String dir) {
                 return;
             } else if (atEdge && hasFinalGift==false) {
                 dialog.show(layeredPane, new String[]{
-                    "HEY, YOU THERE! CAN YOU HELP ME PLEASE?"
+                    "Hey, you there! Can you help me please?"
                 }, null, null, mapW, mapH);
             }
 
@@ -317,8 +317,8 @@ private void move(int dx, int dy, String dir) {
                 if (!talked) showIntro();
                 else if (currentToyTarget == 4 && !hasFinalGift) giveFinalGift();
                 else if (invCont > currentToyTarget) processReturn();
-                else if (hasFinalGift) dialog.show(layeredPane, new String[]{"OH LOOK! THE PATH HAS OPENED, CONTINUE ON TO THE RIGHT."}, null, null, mapW, mapH);
-                else dialog.show(layeredPane, new String[]{"WHILE THE FOGS TOO THICK, PLEASE FIND THE NEXT TOY."}, null, null, mapW, mapH);
+                else if (hasFinalGift) dialog.show(layeredPane, new String[]{"Oh look! The path has opened, continue on to the right."}, null, null, mapW, mapH);
+                else dialog.show(layeredPane, new String[]{"While the fog's too thick, please find the next toy."}, null, null, mapW, mapH);
                 return;
             }
             if (talked && invCont == currentToyTarget) checkTileForToy();
@@ -328,9 +328,9 @@ private void move(int dx, int dy, String dir) {
             hasFinalGift = true;
             saveProgress();
             dialog.show(layeredPane, new String[]{
-                "YOU HAVE BROUGHT THE LIGHT BACK.",
-                "TAKE THIS FRAGMENT OF MEMORY. IT WILL GUIDE YOU THROUGH THE NEXT GATE.",
-                "NOW, WALK TOWARDS THE EDGE. DON'T LOOK BACK."
+                "You have brought the light back.",
+                "Take this fragment of memory. It will guide you through the next gate.",
+                "Now, walk towards the edge. Don't look back."
             }, null, null, mapW, mapH);
         }
 
@@ -348,13 +348,13 @@ private void move(int dx, int dy, String dir) {
             if (found) {
                 invCont++;
                 isFirstCheck = false; 
-                JOptionPane.showMessageDialog(frame, "YOU RETRIEVED A MEMORY.");
+                JOptionPane.showMessageDialog(frame, "You retrieved a memory.");
             } else {
                 if (isFirstCheck) {
-                    JOptionPane.showMessageDialog(frame, "NOT HERE. KEEP LOOKING.");
+                    JOptionPane.showMessageDialog(frame, "Not here. Keep looking.");
                     isFirstCheck = false; 
                 } else if (mapLayout[characterPosition] == 2) {
-                    JOptionPane.showMessageDialog(frame, "THE MIST IS STILL COLD. PLEASE, FIND THE NEXT TOY.");
+                    JOptionPane.showMessageDialog(frame, "The mist is still cold. Please, find the next toy.");
                 }
             }
             render();
@@ -364,10 +364,10 @@ private void move(int dx, int dy, String dir) {
             talked = true;
             saveProgress();
             dialog.show(layeredPane, new String[]{
-                "THEY TOLD ME AS LONG AS I HELD THESE, THEY'D NEVER TRULY BE GONE.",
-                "BUT THE SKY FELL... AND MY HANDS SLIPPED.",
-                "I'M STARTING TO FORGET THE SOUND OF THEIR VOICES.",
-                "PLEASE... CAN YOU FIND CALLISTO FIRST? IT GOT COVERED BY THE CLOUDS ON THE FLOOR."
+                "They told me as long as I held these, they'd never truly be gone.",
+                "But the sky fell... and my hands slipped.",
+                "I'm starting to forget the sound of their voices.",
+                "Please... can you find Callisto first? It got covered by the clouds on the floor."
             }, null, null, mapW, mapH);
         }
 
@@ -378,44 +378,44 @@ private void move(int dx, int dy, String dir) {
 
             if (currentToyTarget == 0) {
                 lines = (!askedFlags[0]) 
-                    ? new String[]{"MY BEAR... MY PARENTS TOLD ME STORIES ABOUT THE GREEK MYTH WHEN THEY TUCKED ME TO BED.", "WHICH WAR WAS IT... THE ONE WHERE THE OLD GODS FELL?"} 
-                    : new String[]{"WHICH WAR DESTROYED THE OLD GODS?"};
-                addOption(currentOpts, currentNext, 0, 0, "ODYSSEY", () -> handleWrong(0));
-                addOption(currentOpts, currentNext, 0, 1, "TITANOMACHY", () -> handleCorrect("YES. FIND MY KITE NEXT."));
-                addOption(currentOpts, currentNext, 0, 2, "ILIAD", () -> handleWrong(0));
+                    ? new String[]{"My bear... my parents told me stories about the Greek myth when they tucked me to bed.", "Which war was it... the one where the old gods fell?"} 
+                    : new String[]{"Which war destroyed the old gods?"};
+                addOption(currentOpts, currentNext, 0, 0, "Odyssey", () -> handleWrong(0));
+                addOption(currentOpts, currentNext, 0, 1, "Titanomachy", () -> handleCorrect("Yes. Find my kite next."));
+                addOption(currentOpts, currentNext, 0, 2, "Iliad", () -> handleWrong(0));
             } 
             else if (currentToyTarget == 1) {
                 lines = (!askedFlags[1]) 
-                    ? new String[]{"MY KITE! FATHER'S HANDS WERE SO WARM WHEN HE GUIDED THE STRING.", "I FORGOT WHAT HE USED TO CALL THAT 'NOTHINGNESS' BEFORE THE WORLD BEGAN.."} 
-                    : new String[]{"WHAT WAS THE 'NOTHINGNESS' CALLED?"};
-                addOption(currentOpts, currentNext, 1, 0, "CHAOS", () -> handleCorrect("CHAOS. YES. FIND MY YO-YO."));
-                addOption(currentOpts, currentNext, 1, 1, "ELYSIUM", () -> handleWrong(1));
-                addOption(currentOpts, currentNext, 1, 2, "OLYMPUS", () -> handleWrong(1));
+                    ? new String[]{"My kite! Father's hands were so warm when he guided the string.", "I forgot what he used to call that 'nothingness' before the world began.."} 
+                    : new String[]{"What was the 'nothingness' called?"};
+                addOption(currentOpts, currentNext, 1, 0, "Chaos", () -> handleCorrect("Chaos. Yes. Find my yo-yo."));
+                addOption(currentOpts, currentNext, 1, 1, "Elysium", () -> handleWrong(1));
+                addOption(currentOpts, currentNext, 1, 2, "Olympus", () -> handleWrong(1));
             }
             else if (currentToyTarget == 2) {
                 lines = (!askedFlags[2]) 
-                    ? new String[]{"DOWN AND UP... LIKE MY HEART WHEN I HEAR THE WIND.", "WHO ARE THE THREE SISTERS WHO CUT THE THREAD OF LIFE?"} 
-                    : new String[]{"WHO CUTS THE THREAD?"};
-                addOption(currentOpts, currentNext, 2, 0, "THE MUSES", () -> handleWrong(2));
-                addOption(currentOpts, currentNext, 2, 1, "THE FURIES", () -> handleWrong(2));
-                addOption(currentOpts, currentNext, 2, 2, "THE MOIRAI", () -> handleCorrect("THE MOIRAI. YES. ONLY THE LOCKET IS LEFT."));
+                    ? new String[]{"Down and up... like my heart when I hear the wind.", "Who are the three sisters who cut the thread of life?"} 
+                    : new String[]{"Who cuts the thread?"};
+                addOption(currentOpts, currentNext, 2, 0, "The Muses", () -> handleWrong(2));
+                addOption(currentOpts, currentNext, 2, 1, "The Furies", () -> handleWrong(2));
+                addOption(currentOpts, currentNext, 2, 2, "The Moirai", () -> handleCorrect("The Moirai. Yes. Only the locket is left."));
             }
             else if (currentToyTarget == 3) {
                 lines = (!askedFlags[3]) 
-                    ? new String[]{"MY LOCKET. IT HOLDS THE PICTURE OF THEM.", "MOTHER SAID THE HUNTER WHO CHASED CALLISTO WAS HER SON. HIS NAME?"} 
-                    : new String[]{"WHAT WAS THE NAME OF THE HUNTER SON?"};
-                addOption(currentOpts, currentNext, 3, 0, "ARCAS", () -> handleCorrect("ARCAS. NOW I REMEMBER EVERYTHING."));
-                addOption(currentOpts, currentNext, 3, 1, "ACTAEON", () -> handleWrong(3));
-                addOption(currentOpts, currentNext, 3, 2, "ADONIS", () -> handleWrong(3));
+                    ? new String[]{"My locket. It holds the picture of them.", "Mother said the hunter who chased Castillo was his son. His name?"} 
+                    : new String[]{"What was the name of the hunter son?"};
+                addOption(currentOpts, currentNext, 3, 0, "Arcas", () -> handleCorrect("Arcas. Now I remember everything."));
+                addOption(currentOpts, currentNext, 3, 1, "Actaeon", () -> handleWrong(3));
+                addOption(currentOpts, currentNext, 3, 2, "Adonis", () -> handleWrong(3));
             }
-            else { lines = new String[]{"THE MIST IS CLEARING. I CAN SEE THEM AGAIN. THANK YOU."}; }
+            else { lines = new String[]{"The mist is clearing. I can see them again. Thank you."}; }
 
             dialog.show(layeredPane, lines, currentOpts.toArray(new String[0]), currentNext.toArray(new Runnable[0]), mapW, mapH);
         }
 
         private void handleWrong(int stage) {
             wrongCount++; askedFlags[stage] = true;
-            dialog.show(layeredPane, new String[]{"I DON'T THINK THAT'S RIGHT..."}, null, null, mapW, mapH);
+            dialog.show(layeredPane, new String[]{"I don't think that's right..."}, null, null, mapW, mapH);
         }
 
 private void handleCorrect(String msg) {
@@ -429,9 +429,9 @@ private void handleCorrect(String msg) {
 
         dialog.show(layeredPane, new String[]{
             msg,
-            "YOU HAVE BROUGHT THE LIGHT BACK.",
-            "TAKE THIS FRAGMENT OF MEMORY. IT WILL GUIDE YOU THROUGH THE NEXT GATE.",
-            "NOW, WALK TOWARDS THE EDGE. DON'T LOOK BACK."
+            "You have brought the light back.", 
+            "Take this fragment of memory. It will guide you through the next gate.",  
+            "Now, walk towards the edge. Don't look back."
         }, null, null, mapW, mapH);
     } else {
         dialog.show(layeredPane, new String[]{msg}, null, null, mapW, mapH);
