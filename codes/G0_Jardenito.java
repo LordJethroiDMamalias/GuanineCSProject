@@ -338,7 +338,7 @@ public class G0_Jardenito implements KeyListener {
                         "Ready?",
                         "GO"
                     };
-                    String[] lines   = {"It has been long, long since Guanine has lived in peace, in harmony.","Now, it is in ruin.","The 30th student.","That is your given title.","But... how significant will that be?","What impact will it have in our broken world?"};
+                    String[] lines   = {"It has been long, long since Guanine has lived in peace, in harmony.","Now, it is in ruin.","Lost and unconscious outside, I took you in.","The 30th student.","That is your given title, isn't it?","But... how significant will that be?","What impact will it have in our broken world?"};
                     String[] options = {"I'll save it", "I'll destroy its evil"};
                     Runnable[] branches = {
                         () -> {
