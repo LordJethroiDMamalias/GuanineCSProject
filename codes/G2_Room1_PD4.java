@@ -11,14 +11,13 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
     public static final class MusicPlayer {
 
         private static Clip   clip    = null;
-        private static String current = null;  // path of the track currently open
+        private static String current = null;  //
 
         private MusicPlayer() {}  
         public static synchronized void start(String path) {
-            // Already playing this exact track — do nothing
             if (clip != null && clip.isRunning() && path.equals(current)) return;
 
-            stop();  // clean up any previous clip before opening a new one
+            stop();  
             try {
                 File file = new File(path);
                 if (!file.exists()) {
@@ -140,7 +139,6 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
                 tiles[i] = new JLabel();
         }
 
-        // ── Image loading — a missing file is non-fatal ───────────────────────
         try {
             backgroundImage = new ImageIcon("images/G2_RoomMap.png");
             if (backgroundImage.getImageLoadStatus() == MediaTracker.ERRORED)
@@ -158,20 +156,20 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
         }
         backgroundLabel = new JLabel(backgroundImage);
 
-        // Sprites — scale() already handles missing files gracefully
+        // Sprites — scalePlayer uses fixed 41px to match PD6 visual size
         for (int i = 0; i < 4; i++) {
-            pUp[i]    = scale("images/up_"    + (i + 1) + ".png");
-            pDown[i]  = scale("images/down_"  + (i + 1) + ".png");
-            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png");
-            pRight[i] = scale("images/right_" + (i + 1) + ".png");
+            pUp[i]    = scalePlayer("images/up_"    + (i + 1) + ".png");
+            pDown[i]  = scalePlayer("images/down_"  + (i + 1) + ".png");
+            pLeft[i]  = scalePlayer("images/left_"  + (i + 1) + ".png");
+            pRight[i] = scalePlayer("images/right_" + (i + 1) + ".png");
         }
 
         G2_pinkBrick     = scale("images/G2_pinkBrick.png");
         G2_door1         = scale("images/G2_door.png");
         G2_pinkFloor     = scale("images/G2_pinkFloor.png");
         G2_pinkPath      = scale("images/G2_pinkPath.png");
-        G2_NPCIcon       = scale("images/G2_MakeupNPC.png");
-        G2_NPCIcon2      = scale("images/G2_MakeupNPC.png");
+        G2_NPCIcon       = scalePlayer("images/G2_MakeupNPC.png");
+        G2_NPCIcon2      = scalePlayer("images/G2_MakeupNPC.png");
         G2_makeupShelf   = scale("images/G2_makeupShelf.png");
         G2_pinkCouch     = scale("images/G2_pinkCouch.png");
         G2_makeupMirror1 = scale("images/G2_makeupMirror1.png");
@@ -238,13 +236,14 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
         }
     }
     private ImageIcon scalePlayer(String path) {
+        int spriteSize = 41; // match PD6 visual size (660/16 = 41)
         try {
             ImageIcon icon = new ImageIcon(path);
             if (icon.getImageLoadStatus() == MediaTracker.ERRORED)
                 return new ImageIcon(new java.awt.image.BufferedImage(
-                        tileSize, tileSize, java.awt.image.BufferedImage.TYPE_INT_ARGB));
+                        spriteSize, spriteSize, java.awt.image.BufferedImage.TYPE_INT_ARGB));
             return new ImageIcon(icon.getImage()
-                    .getScaledInstance(tileSize, tileSize, Image.SCALE_SMOOTH));
+                    .getScaledInstance(spriteSize, spriteSize, Image.SCALE_SMOOTH));
         } catch (Exception e) {
             return new ImageIcon();
         }
