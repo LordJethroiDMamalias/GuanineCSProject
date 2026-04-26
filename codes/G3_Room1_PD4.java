@@ -4,20 +4,26 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.io.File;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 
 /**
  * MEMBERS: FEDORA MAYNOPAS, GN JUMALON, EDWARD MALVAS
- * MODIFIED: Tile-based movement & Post-quest free roam
+ * MODIFIED: Tile-based movement, Post-quest free roam, and Background Music
  */
-
 public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener, MouseListener {
+
+    // --- AUDIO CONTROLS ---
+    private static Clip bgmClip = null;
 
     // ── Grid & Movement Constants ────────────────────────────────────────────
     int playerX = 400, playerY = 480; 
     final int TILE_SIZE = 40; 
     // ────────────────────────────────────────────────────────────────────────
 
-    // ── Animated player sprites (4 frames × 4 directions) ───────────────────
+    // ── Animated player sprites ───────────────────
     ImageIcon[] pUp    = new ImageIcon[4];
     ImageIcon[] pDown  = new ImageIcon[4];
     ImageIcon[] pLeft  = new ImageIcon[4];
@@ -64,22 +70,14 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
     QuestItem activeQuestItem  = null;
     String    currentInput     = "";
 
-    private ImageIcon scalePlayer(String path) {
-        try {
-            ImageIcon icon = new ImageIcon(path);
-            if (icon.getImageLoadStatus() == MediaTracker.ERRORED)
-                return new ImageIcon(new java.awt.image.BufferedImage(32, 64, java.awt.image.BufferedImage.TYPE_INT_ARGB));
-            return new ImageIcon(icon.getImage().getScaledInstance(32, 64, Image.SCALE_SMOOTH));
-        } catch (Exception e) {
-            return new ImageIcon();
-        }
-    }
-
     public G3_Room1_PD4() {
         setPreferredSize(new Dimension(800, 600));
         setFocusable(true);
         addKeyListener(this);
         addMouseListener(this);
+
+        // START MUSIC
+        playMusic("music/Fedora.wav");
 
         try {
             for (int i = 0; i < 4; i++) {
@@ -122,6 +120,45 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
         timer.start();
     }
 
+    // --- AUDIO METHODS ---
+    private void playMusic(String location) {
+        try {
+            File musicPath = new File(location);
+            if (musicPath.exists()) {
+                AudioInputStream audioInput = AudioSystem.getAudioInputStream(musicPath);
+                bgmClip = AudioSystem.getClip();
+                bgmClip.open(audioInput);
+                bgmClip.start();
+                bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
+            } else {
+                System.out.println("Can't find audio file: " + location);
+            }
+        } catch(Exception e) {
+            System.out.println("Error playing music: " + e);
+        }
+    }
+
+    public static void stopMusic() {
+        if (bgmClip != null && bgmClip.isOpen()) {
+            if (bgmClip.isRunning()) bgmClip.stop();
+            bgmClip.close();
+            bgmClip = null;
+        }
+    }
+
+    // --- REST OF EXISTING GAME LOGIC ---
+
+    private ImageIcon scalePlayer(String path) {
+        try {
+            ImageIcon icon = new ImageIcon(path);
+            if (icon.getImageLoadStatus() == MediaTracker.ERRORED)
+                return new ImageIcon(new java.awt.image.BufferedImage(32, 64, java.awt.image.BufferedImage.TYPE_INT_ARGB));
+            return new ImageIcon(icon.getImage().getScaledInstance(32, 64, Image.SCALE_SMOOTH));
+        } catch (Exception e) {
+            return new ImageIcon();
+        }
+    }
+
     private ImageIcon currentSprite() {
         return switch (direction) {
             case 0 -> pUp[walkFrame];
@@ -132,11 +169,10 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
     }
 
     private void attemptMove(int dx, int dy) {
-        // Movement is only blocked by active Dialogue or active Quiz, NOT completion status
         if (activeQuestItem != null || showDialogue) return;
-
         int nextX = playerX + dx;
         int nextY = playerY + dy;
+        if (nextX < 0 || nextX > 800 - 32 || nextY < 0 || nextY > 600 - 64) return; 
 
         Rectangle nextHitbox = new Rectangle(nextX + 9, nextY + 53, 13, 10);
         boolean blocked = false;
@@ -162,37 +198,25 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-
-        // Background
         if (bg != null) g.drawImage(bg, 0, 0, getWidth(), getHeight(), null);
-        else { g.setColor(Color.BLACK); g.fillRect(0, 0, 800, 600); }
-
-        // NPC
         if (npcSprite != null) g.drawImage(npcSprite, npcBox.x, npcBox.y, npcBox.width, npcBox.height, null);
 
-        // Player
         ImageIcon sprite = currentSprite();
         if (sprite != null && sprite.getIconWidth() > 0)
             g.drawImage(sprite.getImage(), playerX, playerY, playerX + 32, playerY + 64,
                         0, 0, sprite.getIconWidth(), sprite.getIconHeight(), null);
 
-        // Quest Overlay (Fragments)
         if (questStarted) {
-            // Draw fragments only if not solved
             for (QuestItem item : items) {
-                if (!item.solved) {
-                    if (item.fragmentImg != null) {
-                        float pulse = (float)(Math.sin(System.currentTimeMillis() / 400.0) * 0.15 + 0.85);
-                        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pulse));
-                        g.drawImage(item.fragmentImg, item.bounds.x, item.bounds.y, item.bounds.width, item.bounds.height, null);
-                        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-                    }
+                if (!item.solved && item.fragmentImg != null) {
+                    float pulse = (float)(Math.sin(System.currentTimeMillis() / 400.0) * 0.15 + 0.85);
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pulse));
+                    g.drawImage(item.fragmentImg, item.bounds.x, item.bounds.y, item.bounds.width, item.bounds.height, null);
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                 }
             }
-
-            // Completion Message (Transparent overlay so you can still see the world)
             if (allNitesSolved) {
-                g.setColor(new Color(0, 255, 150, 40)); // Very light green tint
+                g.setColor(new Color(0, 255, 150, 40));
                 g.fillRect(0, 0, 800, 600);
                 g.setColor(Color.WHITE);
                 g.setFont(new Font("Serif", Font.BOLD, 48));
@@ -278,13 +302,9 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
     @Override
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
+        if (activeQuestItem != null) { handleQuizInput(e); return; }
 
-        if (activeQuestItem != null) {
-            handleQuizInput(e);
-            return;
-        }
-
-        if (key == KeyEvent.VK_E) {
+        if (key == KeyEvent.VK_SPACE) {
             if (showDialogue) {
                 showDialogue = false;
                 if (!questStarted) {
@@ -297,12 +317,10 @@ public class G3_Room1_PD4 extends JPanel implements ActionListener, KeyListener,
                 showDialogue = true;
             }
         } 
-        // Movement
         else if (key == KeyEvent.VK_W || key == KeyEvent.VK_UP) { direction = 0; attemptMove(0, -TILE_SIZE); }
         else if (key == KeyEvent.VK_S || key == KeyEvent.VK_DOWN) { direction = 1; attemptMove(0, TILE_SIZE); }
         else if (key == KeyEvent.VK_A || key == KeyEvent.VK_LEFT) { direction = 2; attemptMove(-TILE_SIZE, 0); }
         else if (key == KeyEvent.VK_D || key == KeyEvent.VK_RIGHT) { direction = 3; attemptMove(TILE_SIZE, 0); }
-        
         repaint();
     }
 
