@@ -460,6 +460,7 @@ public class Battle {
     // =========================================================================
     private void loadBossStats(String enemy) {
         if (boss.equals("Jetroids")) enemyBattle = new ImageIcon("images/" + boss + ".gif");
+        if (boss.equals("Gigglebot")) enemyBattle = new ImageIcon("images/" + boss + ".gif");
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(new FileInputStream(statsFile), "UTF-8"))) {
             String line;
