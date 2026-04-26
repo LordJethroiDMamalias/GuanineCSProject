@@ -4,10 +4,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.io.File;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 
 /**
  * MEMBERS: FEDORA MAYNOPAS, GN JUMALON, EDWARD MALVAS
- * MODIFIED: Movement allowed during/after ending dialogue.
+ * LORE: Celene is dazed/memory-wiped. MC collects broken Nite pieces.
+ * The Nite becomes corrupted upon restoration, triggering a boss fight.
  */
 
 public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener, MouseListener {
@@ -29,11 +34,14 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
     Timer timer = new Timer(16, this);
     ArrayList<Rectangle> solidBoxes = new ArrayList<>();
 
-    Rectangle npcBox          = new Rectangle(200, 200, 32, 64);
+    Rectangle npcBox         = new Rectangle(200, 200, 32, 64);
     Rectangle npcInteractBox = new Rectangle(180, 180, 100, 120);
 
     Battle battle = new Battle();
     JFrame frame; 
+
+    // ── Music Variable ───────────────────────────────────────────────────────
+    private static Clip bgmClip = null;
 
     boolean nearNPC           = false;
     boolean nearItem          = false;
@@ -47,19 +55,20 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
     boolean gameFinished      = false; 
     long    splashStartTime   = 0;
 
-    String currentObjective = "Talk to the Ghost";
+    String currentObjective = "Talk to the Dazed Spirit";
     String dialogueText     = "";
-    String dialogueSpeaker  = "Ghost2";
+    String dialogueSpeaker  = "Celene";
     int    dialogueStep     = 0;
     int    endStep          = 0;
 
     private String[] endDialogue = {
-        "*After the fight, Celene steals the nite from you*",
-        "You can tell that these tasks were left from my dear friend Night...",
-        "She really does love Chemistry and some Math...",
-        "Since you both got the 2 Nites... I'm no longer a ghost!",
-        "I was trapped here in this courtroom for years!",
-        "I guess Night knew I wanted to be a lawyer",
+        "*The corrupted glow fades from Celene's eyes as she collapses*",
+        "My... my head... it feels like it's finally quiet...",
+        "The Nite... it wasn't supposed to be that heavy. That dark.",
+        "I remember now. I was waiting for someone... a friend named Night.",
+        "She loved these puzzles. Chemistry, Math... it was our language.",
+        "Thank you for fixing the Nite, even if it tried to swallow me whole.",
+        "I'm not a ghost anymore... I think I'm just finally free."
     };
 
     class QuestItem {
@@ -69,7 +78,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
         boolean solved = false;
 
         QuestItem(int x, int y, String eq, String ans) {
-            this.bounds   = new Rectangle(x, y, 60, 60);
+            this.bounds   = new Rectangle(x, y, 40, 70);
             this.equation = eq;
             this.answer   = ans;
         }
@@ -96,6 +105,9 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
         setFocusable(true);
         addKeyListener(this);
         addMouseListener(this);
+
+        // Start the background music
+        playMusic("music/Fedora.wav");
 
         try {
             for (int i = 0; i < 4; i++) {
@@ -137,6 +149,32 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
         timer.start();
     }
 
+    // --- Music Logic Implementation ---
+    private void playMusic(String location) {
+        try {
+            File musicPath = new File(location);
+            if (musicPath.exists()) {
+                AudioInputStream audioInput = AudioSystem.getAudioInputStream(musicPath);
+                bgmClip = AudioSystem.getClip();
+                bgmClip.open(audioInput);
+                bgmClip.start();
+                bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
+            } else {
+                System.out.println("Can't find audio file: " + location);
+            }
+        } catch(Exception e) {
+            System.out.println("Error playing music: " + e);
+        }
+    }
+
+    public static void stopMusic() {
+        if (bgmClip != null && bgmClip.isOpen()) {
+            if (bgmClip.isRunning()) bgmClip.stop();
+            bgmClip.close();
+            bgmClip = null;
+        }
+    }
+
     private ImageIcon currentSprite() {
         return switch (direction) {
             case 0 -> pUp[walkFrame];
@@ -147,7 +185,6 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
     }
 
     private void attemptMove(int dx, int dy) {
-        // MODIFIED: Removed 'inEnding' to allow movement during the final dialogue/after game finish
         if (activeQuestItem != null || showNiteSplash) return;
 
         int nextX = playerX + dx;
@@ -211,10 +248,10 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
 
         if (questStarted) {
             for (QuestItem item : items) {
-                if (!item.solved && shiningSprite != null) {
+                if (!item.solved && npcSprite != null) {
                     float pulse = (float)(Math.sin(System.currentTimeMillis() / 400.0) * 0.15 + 0.85);
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, pulse));
-                    g.drawImage(shiningSprite, item.bounds.x, item.bounds.y, item.bounds.width, item.bounds.height, null);
+                    g.drawImage(npcSprite, item.bounds.x, item.bounds.y, item.bounds.width, item.bounds.height, null);
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                 }
             }
@@ -226,7 +263,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
             if (niteIcon != null) g.drawImage(niteIcon, 250, 100, 300, 300, null);
             g.setColor(Color.WHITE);
             g.setFont(new Font("Serif", Font.BOLD, 36));
-            String msg = "Found the Nite!";
+            String msg = "Restored the Nite!";
             g.drawString(msg, 400 - g.getFontMetrics().stringWidth(msg) / 2, 450);
         }
 
@@ -263,7 +300,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
             g.fillRoundRect(300, 400, 200, 30, 10, 10);
             g.setColor(Color.YELLOW);
             g.setFont(new Font("SansSerif", Font.BOLD, 13));
-            g.drawString("[E] to interact", 348, 420);
+            g.drawString("[SPACE] to interact", 335, 420);
         }
     }
 
@@ -314,9 +351,8 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
     public void keyPressed(KeyEvent e) {
         int key = e.getKeyCode();
 
-        // 1. High Priority: Ending sequence input handling
         if (inEnding) {
-            if (key == KeyEvent.VK_E) {
+            if (key == KeyEvent.VK_SPACE) {
                 endStep++;
                 if (endStep > endDialogue.length + 1) {
                     inEnding = false;
@@ -325,26 +361,23 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
                 }
                 repaint();
             }
-            // MODIFIED: We no longer 'return' here, so movement keys can be processed
         }
 
-        // 2. Quiz Input
         if (activeQuestItem != null) {
             handleQuizInput(e);
             return;
         }
 
-        // 3. Regular Input & Movement
-        if (key == KeyEvent.VK_E) {
+        if (key == KeyEvent.VK_SPACE) {
             if (showDialogue) {
                 advanceDialogue();
             } else if (nearNPC) {
                 if (!questStarted) {
-                    dialogueSpeaker = "Ghost2";
-                    dialogueText    = "Let's make it harder shall we? Go find the nites.";
+                    dialogueSpeaker = "Celene";
+                    dialogueText    = "Where... where is it? The light... it broke into pieces...";
                     showDialogue    = true;
                     questStarted    = true;
-                    currentObjective = "Collect the Nites";
+                    currentObjective = "Collect the Nite Fragments";
                 } else if (allNitesSolved && !finalBossTriggered) {
                     dialogueStep = 20;
                     showDialogue = true; 
@@ -389,14 +422,17 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
     }
 
     private void advanceDialogue() {
-        if      (dialogueStep == 20) { dialogueSpeaker = "Me";     dialogueText = "Hey! I can't find it anywhere!?";    dialogueStep = 21; }
-        else if (dialogueStep == 21) { dialogueSpeaker = "Me";     dialogueText = "Why are you smiling like that?";     dialogueStep = 22; }
-        else if (dialogueStep == 22) { dialogueSpeaker = "Ghost2"; dialogueText = "Hehe, you've been fooled.";           dialogueStep = 23; }
-        else if (dialogueStep == 23) { dialogueSpeaker = "Ghost2"; dialogueText = "It was with me all along!";          dialogueStep = 24; }
-        else if (dialogueStep == 24) { dialogueSpeaker = "Celene"; dialogueText = "My name... is Celene!";             dialogueStep = 25; }
+        if      (dialogueStep == 20) { dialogueSpeaker = "Celene";  dialogueText = "...It's... it's humming. The pieces are together...";  dialogueStep = 21; }
+        else if (dialogueStep == 21) { dialogueSpeaker = "Me";      dialogueText = "Celene? You're shaking. Is the Nite supposed to be black?";      dialogueStep = 22; }
+        else if (dialogueStep == 22) { dialogueSpeaker = "Celene"; dialogueText = "Too loud... the chemicals... the logic... it's all WRONG!";            dialogueStep = 23; }
+        else if (dialogueStep == 23) { dialogueSpeaker = "Celene"; dialogueText = "STAY AWAY! THE NITE... IT WANTS TO FEED!";           dialogueStep = 24; }
+        else if (dialogueStep == 24) { dialogueSpeaker = "System"; dialogueText = "The Nite's corruption has taken control of Celene!";               dialogueStep = 25; }
         else if (dialogueStep == 25) {
             showDialogue       = false;
             finalBossTriggered = true;
+            
+            // Stop background music before entering battle if needed
+            // stopMusic(); 
             
             battle.start(frame, "images/G3_background.png", "Celene");
             
@@ -416,8 +452,8 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
 
     private void checkAllPieces() {
         if (finalBossTriggered) {
-            dialogueSpeaker = "Ghost2";
-            dialogueText    = "Fine.. hmph... here you go...";
+            dialogueSpeaker = "Celene";
+            dialogueText    = "I... I can see clearly now. Take the Nite... it's safe now.";
             showDialogue    = true;
             dialogueStep    = 30; 
             return;
@@ -433,10 +469,10 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
 
         if (allDone && !allNitesSolved) { 
             allNitesSolved   = true;
-            currentObjective = "Confront the Ghost";
+            currentObjective = "Return to Celene";
             
             dialogueSpeaker  = "Me";
-            dialogueText     = "Wait, did she trick me?";
+            dialogueText     = "I've gathered all the fragments. She looks so lost...";
             showDialogue     = true; 
             dialogueStep     = 0; 
         }
