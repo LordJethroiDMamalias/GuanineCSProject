@@ -6,8 +6,11 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.sound.sampled.*;
+import java.io.File;
 
 public class G1_Room2_PD6 extends JPanel implements KeyListener {
+    private Clip clip;
     
     private boolean isPaused = false;
     private boolean bossMessageShown = false;
@@ -74,6 +77,7 @@ public class G1_Room2_PD6 extends JPanel implements KeyListener {
     );
 
     public G1_Room2_PD6() {
+        playMusic();
        saved = SaveSystem.loadGame("PD6");
     SaveSystem.startTimer(saved.timeSeconds);
         
@@ -97,18 +101,18 @@ public class G1_Room2_PD6 extends JPanel implements KeyListener {
         
         
 
-        kirbo = new ImageIcon("G1_peashooter_right.png").getImage();
-        redProjectile = new ImageIcon("G1_basketball.png").getImage();
-        shooter = new ImageIcon("G1_bestpeashooter.jpg").getImage();
-        pea = new ImageIcon("G1_pea.png").getImage();
-        wallpaper = new ImageIcon("G1_viness.png").getImage();
-        peashooter_left = new ImageIcon("G1_peashooter_left.png").getImage();
-        lawnmowe = new ImageIcon("G1_lawnmowe.jpg").getImage();
+        kirbo = new ImageIcon("images/G1_peashooter_right.png").getImage();
+redProjectile = new ImageIcon("images/G1_basketball.png").getImage();
+shooter = new ImageIcon("images/G1_bestpeashooter.jpg").getImage();
+pea = new ImageIcon("images/G1_pea.png").getImage();
+wallpaper = new ImageIcon("images/G1_viness.png").getImage();
+peashooter_left = new ImageIcon("images/G1_peashooter_left.png").getImage();
+lawnmowe = new ImageIcon("images/G1_lawnmowe.jpg").getImage();
 
-        boss1 = new ImageIcon("G1_boss1.jpg").getImage();
-        boss2 = new ImageIcon("G1_boss2.jpg").getImage();
-        boss3 = new ImageIcon("G1_boss3.jpg").getImage();
-        boss4 = new ImageIcon("G1_boss4.jpg").getImage();
+boss1 = new ImageIcon("images/G1_boss1.jpg").getImage();
+boss2 = new ImageIcon("images/G1_boss2.jpg").getImage();
+boss3 = new ImageIcon("images/G1_boss3.jpg").getImage();
+boss4 = new ImageIcon("images/G1_boss4.jpg").getImage();
 
         setFocusable(true);
         addKeyListener(this);
@@ -131,6 +135,27 @@ public class G1_Room2_PD6 extends JPanel implements KeyListener {
         Timer fireTimer = new Timer((int) (Math.random() * 1000), e -> fireProjectile());
         fireTimer.start();
     }
+    
+    public void playMusic() {
+    try {
+        File file = new File("music/IVy.wav");
+
+        if (!file.exists()) {
+            System.out.println("Music file not found: " + file.getAbsolutePath());
+            return;
+        }
+
+        AudioInputStream audio = AudioSystem.getAudioInputStream(file);
+
+        clip = AudioSystem.getClip();
+        clip.open(audio);
+        clip.loop(Clip.LOOP_CONTINUOUSLY);
+        clip.start();
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
     
     private void saveProgress() {
     SaveSystem.saveGame(
@@ -402,6 +427,29 @@ if ((kirbyX == 8 && kirbyY == 4) || (kirbyX == 7 && kirbyY == 4)) {
     }
  
 
+    
+
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
+
+    @Override
+    public void keyTyped(KeyEvent e) {}
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Kirbo Shoots Projectiles");
+        G1_Room2_PD6 panel = new G1_Room2_PD6();
+
+        frame.setContentPane(panel);
+        frame.setSize(800, 600);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+
+        SwingUtilities.invokeLater(() -> {
+            panel.requestFocusInWindow();
+        });
+    }
+}
     
 
 
