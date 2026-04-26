@@ -110,20 +110,19 @@ public class G7_Room1_PD4 implements KeyListener {
         playMusic("/music/RYAN.wav");
 
         frame = new JFrame("Room 1 - G7 Casino");
-
-        imgPlayerUp    = safeIcon("/Images/G7_player_up.png", TILE, TILE, Color.BLUE);
-        imgPlayerDown  = safeIcon("/Images/G7_player_down.png", TILE, TILE, Color.BLUE);
-        imgPlayerLeft  = safeIcon("/Images/G7_player_left.png", TILE, TILE, Color.BLUE);
-        imgPlayerRight = safeIcon("/Images/G7_player_right.png", TILE, TILE, Color.BLUE);
-        imgNpc         = safeIcon("/Images/G7_npc.png", TILE, TILE, Color.GREEN);
-        imgDoor        = safeIcon("/Images/G7_enemy.png", TILE, TILE, Color.RED);
-        imgFloor       = safeIcon("/Images/G7_floor.png", TILE, TILE, Color.LIGHT_GRAY);
-        imgSlot        = safeIcon("/Images/G7_slotmachines.png", TILE*2, TILE*3, Color.MAGENTA);
-        imgTable       = safeIcon("/Images/G7_table.png", TILE*2, TILE*2, Color.ORANGE);
-        imgPlant       = safeIcon("/Images/G7_plant.png", TILE, TILE, Color.CYAN);
-        imgChairLeft   = safeIcon("/Images/G7_chair_left.png", TILE, TILE, Color.BLUE);
-        imgChairRight  = safeIcon("/Images/G7_chair_right.png", TILE, TILE, Color.GREEN);
-        imgChip        = safeIcon("/Images/G7_chip.png", 32, 32, Color.YELLOW);
+        imgPlayerUp    = safeIcon("images/G7_player_up.png", TILE, TILE, Color.BLUE);
+        imgPlayerDown  = safeIcon("images/G7_player_down.png", TILE, TILE, Color.BLUE);
+        imgPlayerLeft  = safeIcon("images/G7_player_left.png", TILE, TILE, Color.BLUE);
+        imgPlayerRight = safeIcon("images/G7_player_right.png", TILE, TILE, Color.BLUE);
+        imgNpc         = safeIcon("images/G7_npc.png", TILE, TILE, Color.GREEN);
+        imgDoor        = safeIcon("images/G7_enemy.png", TILE, TILE, Color.RED);
+        imgFloor       = safeIcon("images/G7_floor.png", TILE, TILE, Color.LIGHT_GRAY);
+        imgSlot        = safeIcon("images/G7_slotmachines.png", TILE*2, TILE*3, Color.MAGENTA);
+        imgTable       = safeIcon("images/G7_table.png", TILE*2, TILE*2, Color.ORANGE);
+        imgPlant       = safeIcon("images/G7_plant.png", TILE, TILE, Color.CYAN);
+        imgChairLeft   = safeIcon("images/G7_chair_left.png", TILE, TILE, Color.BLUE);
+        imgChairRight  = safeIcon("images/G7_chair_right.png", TILE, TILE, Color.GREEN);
+        imgChip        = safeIcon("images/G7_chip.png", 32, 32, Color.YELLOW);
         
         initMazeAndChairs();
         loadSaveData();
