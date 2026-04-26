@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 /**
  * MEMBERS: FEDORA MAYNOPAS, GN JUMALON, EDWARD MALVAS
- * MODIFIED: Final Boss Battle transition and Focus/Dialogue fix.
+ * MODIFIED: Movement allowed during/after ending dialogue.
  */
 
 public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener, MouseListener {
@@ -29,7 +29,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
     Timer timer = new Timer(16, this);
     ArrayList<Rectangle> solidBoxes = new ArrayList<>();
 
-    Rectangle npcBox         = new Rectangle(200, 200, 32, 64);
+    Rectangle npcBox          = new Rectangle(200, 200, 32, 64);
     Rectangle npcInteractBox = new Rectangle(180, 180, 100, 120);
 
     Battle battle = new Battle();
@@ -60,9 +60,6 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
         "Since you both got the 2 Nites... I'm no longer a ghost!",
         "I was trapped here in this courtroom for years!",
         "I guess Night knew I wanted to be a lawyer",
-        "Here... I took this from Night..",
-        "It's some chemical that makes her think clearer.",
-        "It might help you in your journey"
     };
 
     class QuestItem {
@@ -133,9 +130,9 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
         solidBoxes.add(new Rectangle(515, 325, 200, 15));
         solidBoxes.add(npcBox);
 
-        items.add(new QuestItem(50,  300, "H2 + O2 -> H2O",        "2,1,2"));
-        items.add(new QuestItem(350, 420, "N2 + H2 -> NH3",         "1,3,2"));
-        items.add(new QuestItem(600, 200, "CH4 + O2 -> CO2 + H2O", "1,2,1,2"));
+        items.add(new QuestItem(50,  300, "H2 + O2 -> H2O (ex: 1,1,1)",        "2,1,2"));
+        items.add(new QuestItem(350, 420, "N2 + H2 -> NH3 (ex: 1,1,1)",         "1,3,2"));
+        items.add(new QuestItem(600, 200, "CH4 + O2 -> CO2 + H2O (ex: 1,1,1,1)", "1,2,1,2"));
 
         timer.start();
     }
@@ -150,7 +147,8 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
     }
 
     private void attemptMove(int dx, int dy) {
-        if (activeQuestItem != null || showNiteSplash || inEnding) return;
+        // MODIFIED: Removed 'inEnding' to allow movement during the final dialogue/after game finish
+        if (activeQuestItem != null || showNiteSplash) return;
 
         int nextX = playerX + dx;
         int nextY = playerY + dy;
@@ -176,7 +174,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
                 hasNite = true;
                 inEnding = true;
                 endStep = 0;
-                this.requestFocusInWindow(); // Grab focus back
+                this.requestFocusInWindow(); 
             }
         }
 
@@ -234,7 +232,6 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
 
         drawUI(g);
         
-        // Priority drawing: Ending dialogue covers normal dialogue
         if (inEnding && !gameFinished) {
             drawEnding(g); 
         } else if (showDialogue) {
@@ -310,10 +307,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
             if (chemicalImg != null) {
                 g.drawImage(chemicalImg, 300, 150, 200, 200, null);
             }
-            drawDialogueBox(g, "System", "Obtained Chemical Potion!");
-        } else {
-            drawDialogueBox(g, "System", "Your head feels lighter! Your thoughts are clearer.");
-        }
+        } 
     }
 
     @Override
@@ -331,7 +325,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
                 }
                 repaint();
             }
-            return; // Important: blocks other code from running
+            // MODIFIED: We no longer 'return' here, so movement keys can be processed
         }
 
         // 2. Quiz Input
@@ -340,7 +334,7 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
             return;
         }
 
-        // 3. Regular Input
+        // 3. Regular Input & Movement
         if (key == KeyEvent.VK_E) {
             if (showDialogue) {
                 advanceDialogue();
@@ -406,11 +400,9 @@ public class G3_Room2_PD6 extends JPanel implements ActionListener, KeyListener,
             
             battle.start(frame, "images/G3_background.png", "Celene");
             
-            // Set ending state immediately
             inEnding = true; 
             endStep = 0;
             
-            // Request focus back to ensure E works after the battle window closes
             this.requestFocusInWindow();
         }
         else if (dialogueStep == 30) {
