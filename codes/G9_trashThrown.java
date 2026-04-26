@@ -63,11 +63,11 @@ public class G9_trashThrown extends GameEvent {
             
             if (game.getTrashCleared() >= game.totalTrash && !game.rewardGiven) {
                 String[] fullSequence = {
-                    "MM. GOOD.",
-                    "HMPH...",
-                    "YOU ACTUALLY MANAGED TO SORT EVERYTHING CORRECTLY.",
-                    "HERE, TAKE THIS GIFT.",
-                    "NOW GET OUT BEFORE I CHANGE MY MIND."
+                    "Mm. Good.",
+                    "Hmph...",
+                    "You actually managed to sort everything correctly.",
+                    "Here, take this gift.",
+                    "Now get out before I change my mind."
                 };
                 game.rewardGiven = true;
                 game.finalDialog = true;
@@ -80,11 +80,11 @@ public class G9_trashThrown extends GameEvent {
                     });
                 });
             } else {
-                dialog.show(lp, new String[]{"MM. GOOD."}, null, null, mw, mh);
+                dialog.show(lp, new String[]{"Mm. Good."}, null, null, mw, mh);
                 reset.run();
             }
         } else {
-            dialog.show(lp, new String[]{"WRONG BIN!", "TRY AGAIN."}, null, null, mw, mh);
+            dialog.show(lp, new String[]{"Wrong bin!", "Try again."}, null, null, mw, mh);
         }
     }
 }
