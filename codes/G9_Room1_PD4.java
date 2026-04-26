@@ -55,7 +55,7 @@ package codes;
         boolean[] askedFlags = new boolean[4]; 
 
         JLabel[] toys;
-        ImageIcon tYoyo, tCar, tBear, tKite, npcKid;
+        ImageIcon tYoyo, tLock, tBear, tKite, npcKid;
         ImageIcon pStand, pFrontW, pFrontW1, pFrontW2, pBack, pBack1, pBack2, pLeft, pLeft1, pLeft2, pRight, pRight1, pRight2;
 
         int[] mapLayout = new int[]{
@@ -81,30 +81,30 @@ package codes;
 
             int tw = frW / mapW;
             int th = frH / mapH;
-            int cw = (int)(tw * 0.7);
-            int ch = (int)(th * 0.7);
+            int cw = (int)(tw * 1);
+            int ch = (int)(th * 1);
 
             ImageIcon mapImg = new ImageIcon("images/G9_map1f.png");
             background = new JLabel(new ImageIcon(mapImg.getImage().getScaledInstance(frW, frH, Image.SCALE_DEFAULT)));
 
             // Assets
-            pStand = scale("images/G9_pFront.png", cw, ch);
-            pFrontW = scale("images/G9_pFront.png", cw, ch);
-            pFrontW1 = scale("images/G9_pFrontLW.png", cw, ch);
-            pFrontW2 = scale("images/G9_pFrontRW.png", cw, ch);
-            pBack = scale("images/G9_pBack.png", cw, ch);
-            pBack1 = scale("images/G9_pBack1.png", cw, ch);
-            pBack2 = scale("images/G9_pBack2.png", cw, ch);
-            pLeft = scale("images/G9_pLeft1.png", cw, ch);
-            pLeft1 = scale("images/G9_pLeft.png", cw, ch);
-            pLeft2 = scale("images/G9_pLeft2.png", cw, ch);
-            pRight = scale("images/G9_pRight1.png", cw, ch);
-            pRight1 = scale("images/G9_pRight.png", cw, ch);
-            pRight2 = scale("images/G9_pRight2.png", cw, ch);
+            pStand = scale("images/down_1.png", cw, ch);
+            pFrontW = scale("images/down_3.png", cw, ch);
+            pFrontW1 = scale("images/down_2.png", cw, ch);
+            pFrontW2 = scale("images/down_3.png", cw, ch);
+            pBack = scale("images/up_1.png", cw, ch);
+            pBack1 = scale("images/up_2.png", cw, ch);
+            pBack2 = scale("images/up_4.png", cw, ch);
+            pLeft = scale("images/left_1.png", cw, ch);
+            pLeft1 = scale("images/left_2.png", cw, ch);
+            pLeft2 = scale("images/left_4.png", cw, ch);
+            pRight = scale("images/right_1.png", cw, ch);
+            pRight1 = scale("images/right_2.png", cw, ch);
+            pRight2 = scale("images/right_4.png", cw, ch);
 
             npcKid = scale("images/G9_caseohT.png", cw, ch);
             tYoyo = scale("images/G9_yoyo.png", cw, ch);
-            tCar = scale("images/G9_locket.png", cw, ch);
+            tLock = scale("images/G9_locket.png", cw, ch);
             tKite = scale("images/G9_torn kite.png", cw, ch);
             tBear = scale("images/G9_teddy.png", cw, ch);
 
@@ -343,7 +343,7 @@ private void move(int dx, int dy, String dir) {
             if (characterPosition == toyLoc[0] && currentToyTarget == 0) {toys[characterPosition].setIcon(tBear); found = true; saveProgress();}
             else if (characterPosition == toyLoc[1] && currentToyTarget == 1) { toys[characterPosition].setIcon(tKite); found = true; saveProgress();}
             else if (characterPosition == toyLoc[2] && currentToyTarget == 2) { toys[characterPosition].setIcon(tYoyo); found = true; saveProgress();}
-            else if (characterPosition == toyLoc[3] && currentToyTarget == 3) { toys[characterPosition].setIcon(tCar); found = true;saveProgress(); }
+            else if (characterPosition == toyLoc[3] && currentToyTarget == 3) { toys[characterPosition].setIcon(tLock); found = true;saveProgress(); }
 
             if (found) {
                 invCont++;
