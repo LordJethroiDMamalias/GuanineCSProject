@@ -1,12 +1,12 @@
+//RASONABE REDULLA VILLAROMAN
 
-// REDULLA, RASONABE, VILLAROMAN
 
-package bossroom;
-
+package codes;
 
 import codes.Battle;
 import codes.SaveSystem;
 
+import javax.sound.sampled.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,7 +17,18 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class minibossroom extends JPanel implements KeyListener {
+/**
+ * G10_Room1_PD4 — Mini-Boss Room (Don Malek)
+ *
+ * Audio:
+ *   Overworld  → DONMALEK.wav
+ *   Battle     → DONMALEK-boss.wav
+ *   Post-battle→ DONMALEK.wav  (resumes)
+ *
+ * Open from another class:
+ *   G10_Room1_PD4.openRoom();
+ */
+public class G10_Room1_PD4 extends JPanel implements KeyListener {
 
     // ── Grid / display ────────────────────────────────────────────────────────
     final int COLS   = 33;
@@ -40,45 +51,24 @@ public class minibossroom extends JPanel implements KeyListener {
     int gridX = SPAWN_X;
     int gridY = SPAWN_Y;
 
+    // ── Project root ──────────────────────────────────────────────────────────
     private static final String PROJECT_ROOT = resolveRoot();
 
     private static String resolveRoot() {
-        System.out.println("=== [minibossroom] PATH DIAGNOSTICS ===");
-
         String cwd = System.getProperty("user.dir", "");
-        System.out.println("[minibossroom] user.dir = " + cwd);
-        System.out.println("[minibossroom] docs/ in user.dir? "
-                + new File(cwd, "docs").isDirectory());
-        System.out.println("[minibossroom] docs/battleStats.txt exists? "
-                + new File(cwd, "docs/battleStats.txt").exists());
+        if (new File(cwd, "docs").isDirectory()) return cwd;
 
-        if (new File(cwd, "docs").isDirectory()) {
-            System.out.println("[minibossroom] ROOT = user.dir (" + cwd + ")");
-            return cwd;
-        }
-
-        // ── Candidate 2: walk up from compiled .class location ────────────────
         try {
             File loc = new File(
-                minibossroom.class.getProtectionDomain()
-                                  .getCodeSource().getLocation().toURI());
+                G10_Room1_PD4.class.getProtectionDomain()
+                                   .getCodeSource().getLocation().toURI());
             File dir = loc.isDirectory() ? loc : loc.getParentFile();
-            System.out.println("[minibossroom] class location = " + loc.getAbsolutePath());
-
             for (int i = 0; i < 8 && dir != null; i++) {
-                System.out.println("[minibossroom] checking: " + dir.getAbsolutePath()
-                        + "  docs?=" + new File(dir, "docs").isDirectory());
-                if (new File(dir, "docs").isDirectory()) {
-                    System.out.println("[minibossroom] ROOT = " + dir.getAbsolutePath());
-                    return dir.getAbsolutePath();
-                }
+                if (new File(dir, "docs").isDirectory()) return dir.getAbsolutePath();
                 dir = dir.getParentFile();
             }
-        } catch (URISyntaxException | SecurityException ex) {
-            System.out.println("[minibossroom] class-walk failed: " + ex.getMessage());
-        }
+        } catch (URISyntaxException | SecurityException ex) { /* ignore */ }
 
-        System.out.println("[minibossroom] ROOT = fallback user.dir (" + cwd + ")");
         return cwd;
     }
 
@@ -92,10 +82,10 @@ public class minibossroom extends JPanel implements KeyListener {
     boolean[][] walkable = new boolean[ROWS][COLS];
 
     // ── Battle ────────────────────────────────────────────────────────────────
-    private final Battle battle      = new Battle();
-    private boolean      battleActive = false;
-    private boolean      bossDefeated = false;
-    private String       savedUserDir = null;
+    private final Battle battle       = new Battle();
+    private boolean      battleActive  = false;
+    private boolean      bossDefeated  = false;
+    private String       savedUserDir  = null;
 
     // ── Save ──────────────────────────────────────────────────────────────────
     private SaveSystem.SaveData saveData;
@@ -103,19 +93,28 @@ public class minibossroom extends JPanel implements KeyListener {
 
     // ── Dialog ────────────────────────────────────────────────────────────────
     private final List<String> dialogLines = new ArrayList<>();
-    private int      dialogIndex  = 0;
+    private int      dialogIndex   = 0;
     private boolean  dialogVisible = false;
     private Runnable dialogOnClose = null;
+
+    // ── Transition ────────────────────────────────────────────────────────────
+    private boolean  transitioning  = false;
+    private float    transAlpha     = 0f;          // 0 = transparent, 1 = black
+    private Timer    transTimer     = null;
+    private Runnable transOnComplete = null;
+
+    // ── Audio ─────────────────────────────────────────────────────────────────
+    private Clip overworldClip = null;
+    private Clip battleClip    = null;
 
     // =========================================================================
     // Constructor
     // =========================================================================
-    public minibossroom() {
+    public G10_Room1_PD4() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setFocusable(true);
         addKeyListener(this);
 
-        // Fix Battle's statsFile before anything else
         fixStatsFilePath();
 
         mapImg      = load("G10_map 2.png");
@@ -129,124 +128,221 @@ public class minibossroom extends JPanel implements KeyListener {
         generateCollision();
         walkable[SPAWN_Y][SPAWN_X] = true;
 
-        saveData = SaveSystem.loadGame("minibossroom");
+        saveData = SaveSystem.loadGame("G10_Room1_PD4");
         if (saveData.isDefeated("Don Malek")) bossDefeated = true;
 
-        SwingUtilities.invokeLater(this::playIntroDialog);
+        // Start overworld BGM
+        SwingUtilities.invokeLater(() -> {
+            startOverworldMusic();
+            playIntroDialog();
+        });
         requestFocusInWindow();
     }
 
-    private void fixStatsFilePath() {
-        System.out.println("=== [minibossroom] STATS FILE SEARCH ===");
+    // =========================================================================
+    // Audio helpers
+    // =========================================================================
 
-        
+    /** Loads a WAV clip from the docs/ or audio/ folders. Returns null on failure. */
+    private Clip loadClip(String filename) {
+        String[] bases = {
+            PROJECT_ROOT + "/src/music/",
+            PROJECT_ROOT + "/music/",
+            PROJECT_ROOT + "/docs/",
+            PROJECT_ROOT + "/audio/",
+            PROJECT_ROOT + "/sounds/",
+            PROJECT_ROOT + "/",
+            System.getProperty("user.dir") + "/src/music/",
+            System.getProperty("user.dir") + "/music/",
+            System.getProperty("user.dir") + "/docs/",
+            System.getProperty("user.dir") + "/audio/",
+        };
+        for (String base : bases) {
+            File f = new File(base + filename);
+            if (f.exists()) {
+                try {
+                    AudioInputStream ais = AudioSystem.getAudioInputStream(f);
+                    Clip clip = AudioSystem.getClip();
+                    clip.open(ais);
+                    return clip;
+                } catch (Exception ex) {
+                    System.out.println("[PD4] Could not load audio '" + filename + "': " + ex.getMessage());
+                }
+            }
+        }
+        System.out.println("[PD4] Audio file not found: " + filename);
+        return null;
+    }
+
+    /** Stops and disposes a clip safely. */
+    private void stopClip(Clip clip) {
+        if (clip != null && clip.isOpen()) {
+            clip.stop();
+            clip.close();
+        }
+    }
+
+    /** Starts looping overworld music (DONMALEK.wav). */
+    private void startOverworldMusic() {
+        stopClip(battleClip);
+        battleClip = null;
+        stopClip(overworldClip);
+        overworldClip = loadClip("DONMALEK.wav");
+        if (overworldClip != null) {
+            overworldClip.loop(Clip.LOOP_CONTINUOUSLY);
+            overworldClip.start();
+        }
+    }
+
+    /** Starts looping battle music (DONMALEK-boss.wav). */
+    private void startBattleMusic() {
+        stopClip(overworldClip);
+        overworldClip = null;
+        stopClip(battleClip);
+        battleClip = loadClip("DONMALEK-boss.wav");
+        if (battleClip != null) {
+            battleClip.loop(Clip.LOOP_CONTINUOUSLY);
+            battleClip.start();
+        }
+    }
+
+    /** Stops all audio (call on dispose). */
+    public void stopAllMusic() {
+        stopClip(overworldClip);
+        stopClip(battleClip);
+        overworldClip = null;
+        battleClip    = null;
+    }
+
+    // =========================================================================
+    // Transition
+    // =========================================================================
+
+    /**
+     * Fades screen to black, runs onComplete, then (optionally) fades back in.
+     * If fadeBack is true the overlay fades out after onComplete runs.
+     */
+    private void fadeOut(Runnable onComplete) {
+        if (transitioning) return;
+        transitioning   = true;
+        transAlpha      = 0f;
+        transOnComplete = onComplete;
+
+        transTimer = new Timer(16, null);
+        transTimer.addActionListener(e -> {
+            transAlpha += 0.05f;
+            repaint();
+            if (transAlpha >= 1f) {
+                transAlpha = 1f;
+                transTimer.stop();
+                repaint();
+                // Short pause at full black, then run callback
+                Timer pause = new Timer(150, ev -> {
+                    Runnable cb = transOnComplete;
+                    transOnComplete = null;
+                    if (cb != null) cb.run();
+                });
+                pause.setRepeats(false);
+                pause.start();
+            }
+        });
+        transTimer.start();
+    }
+
+    private void fadeIn() {
+        transAlpha = 1f;
+        transitioning = true;
+        transTimer = new Timer(16, null);
+        transTimer.addActionListener(e -> {
+            transAlpha -= 0.05f;
+            repaint();
+            if (transAlpha <= 0f) {
+                transAlpha    = 0f;
+                transitioning = false;
+                transTimer.stop();
+                repaint();
+            }
+        });
+        transTimer.start();
+    }
+
+    // =========================================================================
+    // Stats file fix (reflection)
+    // =========================================================================
+    private void fixStatsFilePath() {
         String[] candidates = {
             PROJECT_ROOT + "/docs/battleStats.txt",
             PROJECT_ROOT + "/src/docs/battleStats.txt",
             PROJECT_ROOT + "/battleStats.txt",
             System.getProperty("user.dir") + "/docs/battleStats.txt",
-            System.getProperty("user.dir") + "/src/docs/battleStats.txt",
         };
-
         File found = null;
         for (String path : candidates) {
             File f = new File(path);
-            System.out.println("[minibossroom] stats candidate: " + f.getAbsolutePath()
-                    + "  exists=" + f.exists());
-            if (f.exists() && found == null) {
-                found = f;
-            }
+            if (f.exists() && found == null) found = f;
         }
-
-        if (found == null) {
-            System.out.println("[minibossroom] WARNING: battleStats.txt not found in any"
-                    + " candidate path! Stats will not load.");
-            System.out.println("[minibossroom] Make sure docs/battleStats.txt exists at: "
-                    + PROJECT_ROOT);
-            return;
-        }
-
+        if (found == null) { System.out.println("[PD4] battleStats.txt not found!"); return; }
         try {
             java.lang.reflect.Field f = battle.getClass().getDeclaredField("statsFile");
             f.setAccessible(true);
             f.set(battle, found);
-            System.out.println("[minibossroom] statsFile SET → " + found.getAbsolutePath());
         } catch (Exception ex) {
-            System.out.println("[minibossroom] statsFile reflection failed: " + ex.getMessage());
-        }
-    }
-
-
-    private void fixBattleBackground(JFrame frame) {
-        swapImageField(frame, "backgroundImage", "G10_battleBG.png");
-        swapImageField(frame, "enemyBattle",     "G10_Don Malek1.png");
-        swapImageField(frame, "playerBattle",    "G10_pRight.png");
-        frame.getLayeredPane().repaint();
-    }
-
-
-    private void swapImageField(JFrame frame, String fieldName, String filename) {
-        System.out.println("=== [minibossroom] searching for " + filename + " ===");
-
-        String[] bases = {
-            PROJECT_ROOT + "/images/",
-            PROJECT_ROOT + "/src/images/",
-            PROJECT_ROOT + "/images/map2/",
-            PROJECT_ROOT + "/src/assets/",
-            System.getProperty("user.dir") + "/images/",
-            System.getProperty("user.dir") + "/src/images/",
-        };
-
-        ImageIcon icon = null;
-        for (String base : bases) {
-            File f = new File(base + filename);
-            System.out.println("[minibossroom]   " + f.getAbsolutePath()
-                    + "  exists=" + f.exists());
-            if (f.exists() && icon == null) {
-                icon = new ImageIcon(f.getAbsolutePath());
-            }
-        }
-
-        if (icon == null) {
-            System.out.println("[minibossroom] WARNING: " + filename
-                    + " not found — " + fieldName + " unchanged.");
-            return;
-        }
-
-        try {
-            java.lang.reflect.Field field = battle.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(battle, icon);
-            System.out.println("[minibossroom] " + fieldName + " SET → " + filename);
-        } catch (Exception ex) {
-            System.out.println("[minibossroom] " + fieldName
-                    + " reflection failed: " + ex.getMessage());
+            System.out.println("[PD4] statsFile reflection failed: " + ex.getMessage());
         }
     }
 
     // =========================================================================
-    // Asset loading (overworld sprites only — not used by Battle.java)
+    // Battle sprites fix (reflection)
+    // =========================================================================
+    private void fixBattleBackground(JFrame frame) {
+        swapImageField(frame, "backgroundImage", "G10_battleBG.png");
+        swapImageField(frame, "enemyBattle",     "G10_Don Malek1.png");
+        swapImageField(frame, "playerBattle",    "G10_playerbattle.png");
+        frame.getLayeredPane().repaint();
+    }
+
+    private void swapImageField(JFrame frame, String fieldName, String filename) {
+        String[] bases = {
+            PROJECT_ROOT + "/images/",
+            PROJECT_ROOT + "/src/images/",
+            PROJECT_ROOT + "/images/map2/",
+            System.getProperty("user.dir") + "/images/",
+        };
+        ImageIcon icon = null;
+        for (String base : bases) {
+            File f = new File(base + filename);
+            if (f.exists() && icon == null) icon = new ImageIcon(f.getAbsolutePath());
+        }
+        if (icon == null) { System.out.println("[PD4] Image not found: " + filename); return; }
+        try {
+            java.lang.reflect.Field field = battle.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(battle, icon);
+        } catch (Exception ex) {
+            System.out.println("[PD4] " + fieldName + " reflection failed: " + ex.getMessage());
+        }
+    }
+
+    // =========================================================================
+    // Asset loading
     // =========================================================================
     BufferedImage load(String name) {
         String[] bases = {
             PROJECT_ROOT + "/images/",
             PROJECT_ROOT + "/src/images/",
-            PROJECT_ROOT + "/src/assets/",
             System.getProperty("user.dir") + "/images/",
-            System.getProperty("user.dir") + "/src/images/",
         };
         for (String base : bases) {
             File f = new File(base + name);
             if (f.exists()) {
-                try { return ImageIO.read(f); }
-                catch (Exception ignored) {}
+                try { return ImageIO.read(f); } catch (Exception ignored) {}
             }
         }
         try {
             var is = getClass().getClassLoader().getResourceAsStream("images/" + name);
             if (is != null) return ImageIO.read(is);
         } catch (Exception ignored) {}
-        System.out.println("[minibossroom] Could not load sprite: " + name);
+        System.out.println("[PD4] Could not load sprite: " + name);
         return null;
     }
 
@@ -266,7 +362,7 @@ public class minibossroom extends JPanel implements KeyListener {
                 int px = Math.max(0, Math.min((int)((x + 0.5) * imgW / COLS), imgW - 1));
                 int py = Math.max(0, Math.min((int)((y + 0.5) * imgH / ROWS), imgH - 1));
                 if (x == DOOR_X && y == DOOR_Y) { walkable[y][x] = true; continue; }
-                Color c = new Color(mapImg.getRGB(px, py));
+                Color c       = new Color(mapImg.getRGB(px, py));
                 boolean blocked = (c.getBlue() > 120 && c.getGreen() > 120)
                                || (c.getRed() < 70 && c.getGreen() < 70 && c.getBlue() < 70);
                 walkable[y][x] = !blocked;
@@ -281,7 +377,7 @@ public class minibossroom extends JPanel implements KeyListener {
     int py() { return gridY * TILE_H; }
 
     void move(int dx, int dy, BufferedImage dir) {
-        if (dialogVisible || battleActive) return;
+        if (dialogVisible || battleActive || transitioning) return;
         int nx = gridX + dx, ny = gridY + dy;
         if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) return;
         if (!walkable[ny][nx]) return;
@@ -318,11 +414,13 @@ public class minibossroom extends JPanel implements KeyListener {
             "Don Malek: 'You shouldn\u2019t have come here.'",
             "Don Malek: 'Let\u2019s settle this properly.'"
         }, () -> {
+            // Switch to battle BGM
+            startBattleMusic();
+
             savedUserDir = System.getProperty("user.dir");
             System.setProperty("user.dir", PROJECT_ROOT);
 
             battle.start(frame, "images/map2/TRY THIS.png", "Don Malek");
-
             fixBattleBackground(frame);
 
             Timer poll = new Timer(300, null);
@@ -337,50 +435,43 @@ public class minibossroom extends JPanel implements KeyListener {
         });
     }
 
-    // =========================================================================
-    // Win detection via reflection on battle.hp
-    // =========================================================================
     private boolean didPlayerWin() {
         try {
             java.lang.reflect.Field f = battle.getClass().getDeclaredField("hp");
             f.setAccessible(true);
-            int playerHp = (int) f.get(battle);
-            System.out.println("[minibossroom] battle ended — player hp=" + playerHp);
-            return playerHp > 0;
-        } catch (Exception ex) {
-            System.out.println("[minibossroom] hp reflection failed: " + ex.getMessage());
-            return false;
-        }
+            return (int) f.get(battle) > 0;
+        } catch (Exception ex) { return false; }
     }
 
-    // =========================================================================
-    // Battle result
-    // =========================================================================
     private void onBattleEnd(JFrame frame) {
-        // Restore user.dir
         if (savedUserDir != null) {
             System.setProperty("user.dir", savedUserDir);
             savedUserDir = null;
         }
 
+        // Return to overworld BGM
+        startOverworldMusic();
+
         long    elapsed = (System.currentTimeMillis() - battleStartTime) / 1000;
         boolean won     = didPlayerWin();
+
+        restoreFocus(frame);
 
         if (won) {
             bossDefeated = true;
 
-            saveData = SaveSystem.loadGame("minibossroom");
+            saveData = SaveSystem.loadGame("G10_Room1_PD4");
             List<String> battles = new ArrayList<>(saveData.battles);
             if (!battles.contains("Don Malek")) battles.add("Don Malek");
 
-            SaveSystem.saveGame(new SaveSystem.SaveData.Builder("minibossroom")
-                .position(gridY * COLS + gridX)
+            // No position saved — per request
+            SaveSystem.saveGame(new SaveSystem.SaveData.Builder("G10_Room1_PD4")
                 .flags(saveData.flags)
                 .battles(battles)
                 .time(saveData.timeSeconds + elapsed)
                 .build());
 
-            saveData = SaveSystem.loadGame("minibossroom");
+            saveData = SaveSystem.loadGame("G10_Room1_PD4");
             repaint();
 
             showDialog(new String[]{
@@ -388,10 +479,7 @@ public class minibossroom extends JPanel implements KeyListener {
                 "Don Malek: 'Not bad\u2026 not bad at all.'",
                 "The door ahead glows. The final room awaits.",
                 "[Walk to the glowing door to face Ma\u2019am Kath.]"
-            }, () -> {
-                repaint();
-                requestFocusInWindow();   // ← restores arrow-key movement
-            });
+            }, () -> repaint());
 
         } else {
             gridX = SPAWN_X;
@@ -404,39 +492,49 @@ public class minibossroom extends JPanel implements KeyListener {
                 "You were defeated\u2026",
                 "Don Malek: 'Come back when you\u2019re stronger.'",
                 "You\u2019ve been sent back to the entrance."
-            }, () -> {
-                repaint();
-                requestFocusInWindow();   // ← restores arrow-key movement
-            });
+            }, () -> repaint());
         }
     }
 
+    private void restoreFocus(JFrame frame) {
+        SwingUtilities.invokeLater(() -> {
+            frame.requestFocus();
+            setFocusable(true);
+            requestFocusInWindow();
+        });
+    }
+
     // =========================================================================
-    // Door → BossRoom (Ma'am Kath)
+    // Door → G10_Room2_PD6  (with fade transition)
     // =========================================================================
     void enterDoor() {
-        List<String> battles = new ArrayList<>(saveData.battles);
-        if (!battles.contains("Don Malek")) battles.add("Don Malek");
+        // Fade to black, then open PD6
+        fadeOut(() -> {
+            stopAllMusic();
 
-        SaveSystem.saveGame(new SaveSystem.SaveData.Builder("G10_Room2_PD6")
-            .position(0)
-            .flags(saveData.flags)
-            .battles(battles)
-            .time(saveData.timeSeconds)
-            .build());
+            List<String> battles = new ArrayList<>(saveData.battles);
+            if (!battles.contains("Don Malek")) battles.add("Don Malek");
 
-        JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
-        current.dispose();
+            SaveSystem.saveGame(new SaveSystem.SaveData.Builder("G10_Room2_PD6")
+                .flags(saveData.flags)
+                .battles(battles)
+                .time(saveData.timeSeconds)
+                .build());
 
-        SwingUtilities.invokeLater(() -> {
-            JFrame bossFrame = new JFrame("Boss Room \u2014 Ma\u2019am Kath");
-            BossRoom bossRoom = new BossRoom();
-            bossFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            bossFrame.add(bossRoom);
-            bossFrame.pack();
-            bossFrame.setLocationRelativeTo(null);
-            bossFrame.setVisible(true);
-            bossRoom.requestFocusInWindow();
+            JFrame current = (JFrame) SwingUtilities.getWindowAncestor(this);
+            current.dispose();
+
+            SwingUtilities.invokeLater(() -> {
+                JFrame bossFrame = new JFrame("Boss Room \u2014 Ma\u2019am Kath");
+                G10_Room2_PD6 bossRoom = new G10_Room2_PD6();
+                bossFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                bossFrame.add(bossRoom);
+                bossFrame.pack();
+                bossFrame.setLocationRelativeTo(null);
+                bossFrame.setVisible(true);
+                bossRoom.requestFocusInWindow();
+                // PD6 will fade in on its own intro
+            });
         });
     }
 
@@ -489,64 +587,75 @@ public class minibossroom extends JPanel implements KeyListener {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         if (mapImg != null) g2.drawImage(mapImg, 0, 0, WIDTH, HEIGHT, null);
-        else { g2.setColor(new Color(20,15,35)); g2.fillRect(0,0,WIDTH,HEIGHT); }
+        else { g2.setColor(new Color(20, 15, 35)); g2.fillRect(0, 0, WIDTH, HEIGHT); }
 
+        // Door highlight
         if (bossDefeated) {
-            g2.setColor(new Color(100,200,255,160));
-            g2.fillRect(DOOR_X*TILE_W, DOOR_Y*TILE_H, TILE_W, TILE_H);
+            g2.setColor(new Color(100, 200, 255, 160));
+            g2.fillRect(DOOR_X * TILE_W, DOOR_Y * TILE_H, TILE_W, TILE_H);
         }
-        g2.setColor(bossDefeated ? new Color(100,200,255) : new Color(120,60,60));
+        g2.setColor(bossDefeated ? new Color(100, 200, 255) : new Color(120, 60, 60));
         g2.setStroke(new BasicStroke(2));
-        g2.drawRect(DOOR_X*TILE_W, DOOR_Y*TILE_H, TILE_W, TILE_H);
+        g2.drawRect(DOOR_X * TILE_W, DOOR_Y * TILE_H, TILE_W, TILE_H);
 
+        // Boss sprite
         if (!bossDefeated) {
             if (bossImg != null) {
-                g2.drawImage(bossImg, BOSS_TILE_X*TILE_W, BOSS_TILE_Y*TILE_H,
-                             TILE_W*3, TILE_H*3, null);
+                g2.drawImage(bossImg, BOSS_TILE_X * TILE_W, BOSS_TILE_Y * TILE_H,
+                             TILE_W * 3, TILE_H * 3, null);
             } else {
-                g2.setColor(new Color(200,100,30,200));
-                g2.fillRoundRect(BOSS_TILE_X*TILE_W+2, BOSS_TILE_Y*TILE_H+2,
-                                 TILE_W-4, TILE_H-4, 6, 6);
+                g2.setColor(new Color(200, 100, 30, 200));
+                g2.fillRoundRect(BOSS_TILE_X * TILE_W + 2, BOSS_TILE_Y * TILE_H + 2,
+                                 TILE_W - 4, TILE_H - 4, 6, 6);
                 g2.setColor(Color.WHITE);
                 g2.setFont(new Font("Arial", Font.BOLD, 8));
-                g2.drawString("DON", BOSS_TILE_X*TILE_W+2, BOSS_TILE_Y*TILE_H+TILE_H-4);
+                g2.drawString("DON", BOSS_TILE_X * TILE_W + 2, BOSS_TILE_Y * TILE_H + TILE_H - 4);
             }
-            g2.setColor(new Color(200,80,30,35));
-            g2.fillRect(BOSS_TRIGGER_X*TILE_W, BOSS_TRIGGER_Y*TILE_H, TILE_W, TILE_H);
+            g2.setColor(new Color(200, 80, 30, 35));
+            g2.fillRect(BOSS_TRIGGER_X * TILE_W, BOSS_TRIGGER_Y * TILE_H, TILE_W, TILE_H);
         }
 
+        // Player
         if (!battleActive) {
             if (currentPlayer != null)
                 g2.drawImage(currentPlayer, px(), py(), TILE_W, TILE_H, null);
             else {
-                g2.setColor(new Color(68,136,204));
-                g2.fillRect(px()+2, py()+2, TILE_W-4, TILE_H-4);
+                g2.setColor(new Color(68, 136, 204));
+                g2.fillRect(px() + 2, py() + 2, TILE_W - 4, TILE_H - 4);
             }
         }
 
+        // Dialog box
         if (dialogVisible && !dialogLines.isEmpty()) {
-            int boxH = 80, boxY = HEIGHT-boxH-10, pad = 12;
-            g2.setColor(new Color(0,0,0,210));
-            g2.fillRoundRect(pad, boxY, WIDTH-pad*2, boxH, 10, 10);
+            int boxH = 80, boxY = HEIGHT - boxH - 10, pad = 12;
+            g2.setColor(new Color(0, 0, 0, 210));
+            g2.fillRoundRect(pad, boxY, WIDTH - pad * 2, boxH, 10, 10);
             g2.setColor(Color.WHITE);
             g2.setStroke(new BasicStroke(1.5f));
-            g2.drawRoundRect(pad, boxY, WIDTH-pad*2, boxH, 10, 10);
+            g2.drawRoundRect(pad, boxY, WIDTH - pad * 2, boxH, 10, 10);
             g2.setFont(new Font("Comic Sans MS", Font.BOLD, 14));
             g2.setColor(Color.WHITE);
             String line = dialogLines.get(dialogIndex);
             if (line.length() <= 62) {
-                g2.drawString(line, pad+14, boxY+30);
+                g2.drawString(line, pad + 14, boxY + 30);
             } else {
                 int split = line.lastIndexOf(' ', 62);
                 if (split < 0) split = 62;
-                g2.drawString(line.substring(0, split),       pad+14, boxY+24);
-                g2.drawString(line.substring(split+1).trim(), pad+14, boxY+46);
+                g2.drawString(line.substring(0, split),       pad + 14, boxY + 24);
+                g2.drawString(line.substring(split + 1).trim(), pad + 14, boxY + 46);
             }
             g2.setFont(new Font("Arial", Font.PLAIN, 11));
-            g2.setColor(new Color(180,180,180));
-            g2.drawString(dialogIndex < dialogLines.size()-1
+            g2.setColor(new Color(180, 180, 180));
+            g2.drawString(dialogIndex < dialogLines.size() - 1
                     ? "SPACE \u2014 next" : "SPACE \u2014 close",
-                    WIDTH-pad*2-90, boxY+boxH-8);
+                    WIDTH - pad * 2 - 90, boxY + boxH - 8);
+        }
+
+        // Fade overlay (transition)
+        if (transAlpha > 0f) {
+            int a = Math.min(255, (int)(transAlpha * 255));
+            g2.setColor(new Color(0, 0, 0, a));
+            g2.fillRect(0, 0, WIDTH, HEIGHT);
         }
     }
 
@@ -560,39 +669,34 @@ public class minibossroom extends JPanel implements KeyListener {
             if (k == KeyEvent.VK_SPACE || k == KeyEvent.VK_ENTER) advanceDialog();
             return;
         }
-        if (battleActive) return;
-        if (k == KeyEvent.VK_W)    move(0, -1, playerUp);
-        if (k == KeyEvent.VK_S)  move(0,  1, playerDown);
-        if (k == KeyEvent.VK_A)  move(-1, 0, playerLeft);
-        if (k == KeyEvent.VK_D) move( 1, 0, playerRight);
+        if (battleActive || transitioning) return;
+        if (k == KeyEvent.VK_W) move( 0, -1, playerUp);
+        if (k == KeyEvent.VK_S) move( 0,  1, playerDown);
+        if (k == KeyEvent.VK_A) move(-1,  0, playerLeft);
+        if (k == KeyEvent.VK_D) move( 1,  0, playerRight);
     }
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e)    {}
 
     // =========================================================================
-    // Entry points
+    // Public entry points
     // =========================================================================
-    public static void main(String[] args) {
-        JFrame f = new JFrame("Mini Boss Room \u2014 Don Malek");
-        minibossroom game = new minibossroom();
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.add(game);
-        f.pack();
-        f.setLocationRelativeTo(null);
-        f.setVisible(true);
-        game.requestFocusInWindow();
-    }
 
-    public static void openMinibossRoom() {
+    /** Open this room from any other class. */
+    public static void openRoom() {
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("Mini Boss Room \u2014 Don Malek");
-            minibossroom game = new minibossroom();
+            G10_Room1_PD4 room = new G10_Room1_PD4();
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            f.add(game);
+            f.add(room);
             f.pack();
             f.setLocationRelativeTo(null);
             f.setVisible(true);
-            game.requestFocusInWindow();
+            room.requestFocusInWindow();
         });
+    }
+
+    public static void main(String[] args) {
+        openRoom();
     }
 }
