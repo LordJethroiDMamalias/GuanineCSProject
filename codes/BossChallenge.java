@@ -29,6 +29,7 @@ import javax.swing.JFrame;
  *   bin izharfed  -> BinIzharfedPool Saudi Arabia + world geography/history
  *   gigglebot3000 -> GigglebotPool  force, power, electricity
  *   jarrelle      -> JarrellePool   cell biology, human body, general biology
+ *   maam kath     -> MaamKathPool   grammar + school press
  *   <others>      -> RainityPool    default fallback
  *
  * ── ADDING A NEW BOSS ────────────────────────────────────────────────────────
@@ -68,6 +69,9 @@ public class BossChallenge {
 
         // ── Jarrelle Group ────────────────────────────────────────────────────
         reg("jarrelle",    new QuestionPool.JarrellePool());
+
+        // Ma'am Kath — grammar + school press
+        reg("ma'am kath", new QuestionPool.MaamKathPool());
     }
 
     private static void reg(String name, QuestionPool.Pool pool) {

@@ -157,6 +157,7 @@ public class G2_Room2_PD6 implements KeyListener {
 
         System.out.println("Game initialization sequence completed.");
         loadSaveData();
+        saveProgress();
     }
 
     // =========================================================================
@@ -231,13 +232,15 @@ public class G2_Room2_PD6 implements KeyListener {
             new String[]{"[You step through the door...]", "[The hallway leads to a new room.]"},
             null, null, mapWidth, mapHeight,
             () -> SwingUtilities.invokeLater(() -> {
-                frame.dispose();
+                
                 try {
-                    G4_Room1_PD4 Group4 = new G4_Room1_PD4();
-                    Group4.setFrame();
+                    frame.dispose();
+                    G2_Room1_PD4.MusicPlayer.stop();
+                    G3_Room1_PD4 Group3 = new G3_Room1_PD4();
+                    Group3.setFrame();
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(null,
-                        "Failed to load Group 4 map: " + ex.getMessage(),
+                        "Failed to load Group 3 map: " + ex.getMessage(),
                         "Transition Error", JOptionPane.ERROR_MESSAGE);
                     ex.printStackTrace();
                 }
@@ -300,6 +303,7 @@ public class G2_Room2_PD6 implements KeyListener {
                             },
                             null, null, mapWidth, mapHeight,
                             () -> {
+                                G2_Room1_PD4.MusicPlayer.stop();
                                 battle.start(frame, "images/G2_BattleBackground.png", "Rainity");
                                 waitForBattleEnd(() -> {
                                     if (!SaveSystem.isDefeated("Rainity"))
@@ -309,6 +313,7 @@ public class G2_Room2_PD6 implements KeyListener {
                             });
 
                     } else {
+                        G2_Room1_PD4.MusicPlayer.start("music/Rainity.wav");
                         String npcLine = SaveSystem.isDefeated("Rainity")
                                 ? "(The NPC smiles warmly, relieved.)"
                                 : "(The NPC trembles. Something is still very wrong here.)";
@@ -411,7 +416,7 @@ public class G2_Room2_PD6 implements KeyListener {
     }
 
     public static void main(String[] args) {
-        G2_Room1_PD4.MusicPlayer.start("music/Green Room.wav");
+        G2_Room1_PD4.MusicPlayer.start("music/Rainity.wav");
 
         try {
             G2_Room2_PD6 x = new G2_Room2_PD6();

@@ -145,6 +145,7 @@ for (int i = 0; i < mapLayout.length; i++) {
                 }
             }
             loadSaveData();
+            saveProgress();
         }
 
         public static Clip bgmClip = null;

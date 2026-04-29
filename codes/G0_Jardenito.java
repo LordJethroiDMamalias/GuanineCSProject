@@ -12,8 +12,7 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-//Group 4: Asegurado, Mamalias, Mazo
-//with major help from deepai
+//this is for tutorial. no group owns this -jethroi
 public class G0_Jardenito implements KeyListener {
     JFrame frame;
     JLayeredPane layers;
@@ -70,10 +69,10 @@ public class G0_Jardenito implements KeyListener {
         jardenito= scale("images/G0_Jardenito.png", tw, th);
 
         for (int i = 0; i < 4; i++) {
-            pUp[i]    = scale("images/up_"    + (i + 1) + ".png", tw / 2, th);
-            pDown[i]  = scale("images/down_"  + (i + 1) + ".png", tw / 2, th);
-            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png", tw / 2, th);
-            pRight[i] = scale("images/right_" + (i + 1) + ".png", tw / 2, th);
+            pUp[i]    = scale("images/up_"    + (i + 1) + ".png", tw, th);
+            pDown[i]  = scale("images/down_"  + (i + 1) + ".png", tw, th);
+            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png", tw, th);
+            pRight[i] = scale("images/right_" + (i + 1) + ".png", tw, th);
         }
 
         // Invisible NPC sprites
@@ -308,11 +307,14 @@ public class G0_Jardenito implements KeyListener {
                             }, null, null, mapWidth, mapHeight);
                             return;
                         }
-                        dialog.show(layers, new String[]{
-                            "Ready?",
-                            "Okay, put me in your pocket.",
-                            "LET'S GO FOR REAL!"
-                        }, null, null, mapWidth, mapHeight);
+                        Timer monitor = new Timer(100, ev -> {
+                            System.out.println("Sending to IVy...");
+                            ((Timer) ev.getSource()).stop();
+                            saveProgress();
+                            stopSound();
+                            transitionToIVy();
+                        });
+                        monitor.start();
                         return;
                     }
 
@@ -473,6 +475,14 @@ public class G0_Jardenito implements KeyListener {
             bgmClip.close();
             bgmClip = null;
         }
+    }
+    
+    private void transitionToIVy() {
+        if (transitioning) return;
+        transitioning = true;
+
+        frame.dispose();
+        SwingUtilities.invokeLater(() -> new G1_Room1_PD4().setFrame());
     }
 
     // =========================================================================

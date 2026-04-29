@@ -96,8 +96,8 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
         // If bgMusic was passed in from Room1, it is already playing — do nothing.
 
         // ---------- LOAD SAVE ----------
-        saveData = SaveSystem.loadGame("G6_Room2_PD6");
-        SaveSystem.startTimer(saveData.timeSeconds);
+        loadSaveData();
+        saveProgress();
 
         // ---------- SPRITES ----------
         icon  = new ImageIcon("images/down_1.png");
@@ -200,6 +200,27 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
         );
 
         requestFocusInWindow();
+    }
+    
+    private void loadSaveData() {
+        SaveSystem.SaveData save = SaveSystem.loadGame("G6_Room2_PD6");
+
+        if (save.timeSeconds <= 0) {
+            SaveSystem.SaveData pd4Save = SaveSystem.loadGame("G6_Room1_PD4");
+            SaveSystem.startTimer(pd4Save.timeSeconds);
+        } else {
+            SaveSystem.startTimer(save.timeSeconds);
+        }
+    }
+
+    // =========================================================================
+    // Save integration — save
+    // =========================================================================
+    private void saveProgress() {
+        SaveSystem.saveGame(
+            new SaveSystem.SaveData.Builder("G6_Room2_PD6")
+                .battles(SaveSystem.getDefeatedBosses())
+        );
     }
 
     ImageIcon scale(ImageIcon img, int w, int h) {
@@ -393,6 +414,7 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
                 },
                 null, null, mapw, maph,
                 () -> {
+                    transitionToG7();
                     stopMusic();
                     dispose();
                 }
@@ -411,6 +433,10 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
 
     @Override public void keyReleased(KeyEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
+    
+    private void transitionToG7() {
+        SwingUtilities.invokeLater(() -> new G7_Room1_PD4().setFrame());
+    }
 
     public static void main(String[] args) {
         G6_Room2_PD6 room = new G6_Room2_PD6();

@@ -104,14 +104,35 @@ public class G10_Room1_PD4 extends JPanel implements KeyListener {
         generateCollision();
         walkable[SPAWN_Y][SPAWN_X] = true;
 
-        saveData = SaveSystem.loadGame("G10_Room1_PD4");
-        if (saveData.isDefeated("Don Malek")) bossDefeated = true;
+        loadSaveData();
+        saveProgress();
 
         SwingUtilities.invokeLater(() -> {
             startOverworldMusic();
             playIntroDialog();
         });
         requestFocusInWindow();
+    }
+    
+    private void loadSaveData() {
+        SaveSystem.SaveData save = SaveSystem.loadGame("G10_Room1_PD4");
+
+        if (save.timeSeconds <= 0) {
+            SaveSystem.SaveData pd4Save = SaveSystem.loadGame("G9_Room2_PD6");
+            SaveSystem.startTimer(pd4Save.timeSeconds);
+        } else {
+            SaveSystem.startTimer(save.timeSeconds);
+        }
+    }
+
+    // =========================================================================
+    // Save integration — save
+    // =========================================================================
+    private void saveProgress() {
+        SaveSystem.saveGame(
+            new SaveSystem.SaveData.Builder("G10_Room1_PD4")
+                .battles(SaveSystem.getDefeatedBosses())
+        );
     }
 
     private Clip loadClip(String filename) {

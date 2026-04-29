@@ -46,7 +46,9 @@ public class Battle {
     private boolean        blocking           = false;
     private boolean        skipNextTurn       = false;
     private boolean        lastActionWasBlock = false;
-    private Clip bgmClip = null;
+    private boolean        damageDealtThisTurn = false;
+    private boolean        playerWon = false;
+    private Clip           bgmClip = null;
     private final java.util.List<Clip> activeSFX = new java.util.concurrent.CopyOnWriteArrayList<>();
     private int            healsUsed          = 0;
     private static final int MAX_HEALS        = 5;
@@ -96,23 +98,20 @@ public class Battle {
             // Poison ticks also go through BossChallenge so the player can
             // mitigate each tick by solving an equation.
             int rawPoison = b.poisonDmg;
-            int finalPoison = BossChallenge.challenge(b.frame, "ivy", rawPoison);
-            b.hp = Math.max(0, b.hp - finalPoison);
+            b.hp = Math.max(0, b.hp - rawPoison);
             b.poisonDuration--;
-            return "Poison burns for " + finalPoison + " damage! ("
-                    + b.poisonDuration + " turn" + (b.poisonDuration == 1 ? "" : "s") + " remaining)";
+            return "Poison burns for " + rawPoison + " HP!";
         }
         @Override public String onAfterEnemyAttack(Battle b) {
-            int newDmg = 2 + RNG.nextInt(3);
+            int newDmg = 3 + RNG.nextInt(6);
             if (b.poisonDuration > 0) {
                 b.poisonDuration = Math.min(b.poisonDuration + 1, 6);
                 b.poisonDmg = newDmg;
-                return "IVy deepens the infection! Poison duration +1 ("
-                        + b.poisonDuration + " turns, " + newDmg + " dmg/turn).";
+                return "IVy deepens the infection! New damage: " + newDmg + " HP.";
             } else {
                 b.poisonDuration = 1;
                 b.poisonDmg = newDmg;
-                return "IVy's attack POISONS you! " + newDmg + " dmg/turn for 1 turn.";
+                return "IVy's attack POISONS you! " + newDmg + " HP.";
             }
         }
     }
@@ -183,10 +182,9 @@ public class Battle {
     // =========================================================================
     private int applyDamageToPlayer(int rawDmg) {
         if (rawDmg <= 0) return 0;
-        // Routes to boss-specific question pool: Rainity→algebra, Main→chemistry/sports,
-        // Jetroids→trig/physics, all others→algebra (default).
         int finalDmg = BossChallenge.challenge(frame, boss, rawDmg);
         hp = Math.max(0, hp - finalDmg);
+        if (finalDmg > 0) damageDealtThisTurn = true;
         return finalDmg;
     }
 
@@ -217,13 +215,30 @@ public class Battle {
     }
 
     private String handleJetroidsAttack() {
-        // Two-hit attack: each hit gets its own math challenge.
-        int raw1 = enemyDamage(enemyAtk);
-        int hit1 = applyDamageToPlayer(raw1);
-        int raw2 = enemyDamage(enemyAtk);
-        int hit2 = applyDamageToPlayer(raw2);
-        return boss + " attacks TWICE!\n  First hit deals " + hit1
-                + " damage.\n  Second hit deals " + hit2 + " damage!";
+        int hit1 = applyDamageToPlayer(enemyDamage(enemyAtk));
+
+        // Build first-hit message — SFX fires on its first character.
+        String msg1 = boss + " attacks TWICE! \n\nHis first hit deals " + hit1 + " damage...";
+
+        int hit2 = applyDamageToPlayer(enemyDamage(enemyAtk));
+
+        // Schedule second message after first finishes — its own SFX fires fresh.
+        String msg2 = "...and his second hit deals " + hit2 + " damage!";
+
+        // Chain the two typewriter calls so they run sequentially.
+        typewriterLog(msg1, "sfx/hurt.wav", () ->
+            typewriterLog(msg2, hp > 0 ? "sfx/hurt.wav" : null, () -> {
+                updateHpBar();
+                updateEnemyHpBar();
+                if (hp <= 0) defeat();
+                // runEnemyTurn's callback is bypassed here — return control manually.
+                else { turnLocked = false; setButtonsEnabled(true); }
+            })
+        );
+
+        // Return empty string — runEnemyTurn's typewriterLog call is skipped
+        // by the isEmpty() guard in runEnemyTurn after resolveEnemyAttack().
+        return "";
     }
 
     private String handleJarrelleAttack() {
@@ -291,7 +306,7 @@ public class Battle {
         enemyHp  = Math.min(enemyHp + heal, enemyMaxHp);
         return boss + " processes: dealt " + dmg + " damage, self-repaired " + heal + " HP.";
     }
-    
+
     private String handleBinIzharfedAttack() {
         // 60% chance Stellar Descent, 40% chance Cloudbombs.
         // Weighted so the multi-hit move comes up more often, keeping
@@ -399,6 +414,33 @@ public class Battle {
         return log.toString();
     }
 
+    private String handleMaamKathAttack() {
+        // Ma'am Kath alternates between a heavy strike and a "grade" move
+        // that raises her DEF (she's reviewing your performance).
+        int roll = RNG.nextInt(3);
+        return switch (roll) {
+            case 0 -> {
+                // Standard authoritative strike
+                int raw = enemyDamage(enemyAtk);
+                int dmg = applyDamageToPlayer(raw);
+                yield "Ma'am Kath strikes with quiet authority for " + dmg + " damage!";
+            }
+            case 1 -> {
+                // Boosted corrective strike — she spotted a mistake
+                int raw = enemyDamage(enemyAtk) + 5;
+                int dmg = applyDamageToPlayer(raw);
+                yield "Ma'am Kath: 'That was incorrect.' Corrective strike for " + dmg + " damage!";
+            }
+            default -> {
+                // Grades your performance — DEF up, she's getting more defensive
+                enemyDef += 3;
+                int raw = enemyDamage(enemyAtk);
+                int dmg = applyDamageToPlayer(raw);
+                yield "Ma'am Kath reviews her grade book. DEF +3 (now " + enemyDef + "). Dealt " + dmg + " damage.";
+            }
+        };
+    }
+
     private String defaultEnemyAttack() {
         int raw = enemyDamage(enemyAtk);
         int dmg = applyDamageToPlayer(raw);
@@ -430,6 +472,7 @@ public class Battle {
         active  = true;
         ending  = false;
         paused  = true;
+        playerWon = false;
         this.boss = boss;
         frame     = parentFrame;
 
@@ -450,7 +493,7 @@ public class Battle {
     }
 
     private void initBossState(String enemy) {
-        if (enemy.equalsIgnoreCase("ryan")) {
+        if (enemy.equalsIgnoreCase("RYAN")) {
             ryanHpMilestone = enemyMaxHp / 10;
         }
     }
@@ -459,8 +502,7 @@ public class Battle {
     // TXT file loading
     // =========================================================================
     private void loadBossStats(String enemy) {
-        if (boss.equals("Jetroids")) enemyBattle = new ImageIcon("images/" + boss + ".gif");
-        if (boss.equals("GIGGLEBOT3000")) enemyBattle = new ImageIcon("images/" + boss + ".gif");
+        if (boss.equals("Jetroids") || boss.equals("GIGGLEBOT3000")) enemyBattle = new ImageIcon("images/" + boss + ".gif");
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(new FileInputStream(statsFile), "UTF-8"))) {
             String line;
@@ -695,8 +737,8 @@ public class Battle {
                 + "   ATK: " + enemyAtk + "   DEF: " + enemyDef + "\n"
                 + "PASSIVE: " + passiveText + "\n"
                 + checkText;
-        typewriterLog(info, null);
         playSFX("sfx/button.wav");
+        typewriterLog(info, null);
     }
 
     private void handleBlock() {
@@ -707,9 +749,9 @@ public class Battle {
         blocking           = true;
         //skipNextTurn       = true;
         lastActionWasBlock = true;
+        playSFX("sfx/block.wav");
         typewriterLog("You brace for the next attack!", () ->
                 scheduleEnemyTurn(300));
-        playSFX("sfx/block.wav");
     }
 
     private void handleHeal() {
@@ -722,12 +764,12 @@ public class Battle {
         int healsLeft = MAX_HEALS - healsUsed;
         int heal = 20 + RNG.nextInt(11);
         hp = Math.min(hp + heal, maxHp);
+        playSFX("sfx/heal.wav");
         typewriterLog("You healed " + heal + " HP!  (" + hp + "/" + maxHp + ")  ["
                 + healsLeft + "/" + MAX_HEALS + " heals left]", () -> {
             updateHpBar();
             scheduleEnemyTurn(300);
         });
-        playSFX("sfx/heal.wav");
     }
 
     // =========================================================================
@@ -748,10 +790,12 @@ public class Battle {
     private void runEnemyTurn() {
         if (!active || ending) return;
 
+        damageDealtThisTurn = false; // reset before every enemy turn
         StringBuilder log = new StringBuilder();
 
-        // Before-attack passives (e.g. poison tick — each tick prompts its own
-        // math challenge inside IvyPoisonPassive.onBeforeEnemyAttack)
+        // Before-attack passives (e.g. IVy poison tick).
+        // applyDamageToPlayer() inside these will set damageDealtThisTurn = true
+        // if the tick deals damage — the poison SFX will fire automatically.
         for (EnemyPassive p : enemyPassives) {
             String msg = p.onBeforeEnemyAttack(this);
             if (!msg.isEmpty()) log.append(msg).append("\n");
@@ -760,17 +804,21 @@ public class Battle {
         if (hp <= 0) {
             String preLog = log.toString().trim();
             if (!preLog.isEmpty()) {
-                typewriterLog(preLog, () -> defeat());
+                typewriterLog(preLog, null);
             } else {
                 defeat();
             }
             return;
         }
 
-        // Main attack — applyDamageToPlayer() inside each handler opens the dialog
-        log.append(resolveEnemyAttack());
+        // Jetroids (and any future chained handler) manages its own typewriter
+        // calls internally and returns "" to signal that runEnemyTurn should
+        // not double-log. All other handlers return a non-empty string.
+        String attackLog = resolveEnemyAttack();
+        if (attackLog.isEmpty()) return;
 
-        // After-attack passives
+        log.append(attackLog);
+
         for (EnemyPassive p : enemyPassives) {
             String msg = p.onAfterEnemyAttack(this);
             if (!msg.isEmpty()) log.append("\n").append(msg);
@@ -779,14 +827,19 @@ public class Battle {
         String ft = resolveFlavor(enemyHp < enemyMaxHp / 2 ? flavorLow : flavor);
         if (ft != null && !ft.isEmpty()) log.append("\n").append(ft);
 
-        typewriterLog(log.toString(), () -> {
+        // Pass "sfx/hurt.wav" only if at least one hit actually dealt damage.
+        // Blocked attacks, HP swaps (Main), and gimmick moves leave
+        // damageDealtThisTurn = false, so no SFX fires for those.
+        String sfx = damageDealtThisTurn ? "sfx/hurt.wav" : null;
+
+        typewriterLog(log.toString(), sfx, () -> {
             updateHpBar();
             updateEnemyHpBar();
             if (hp <= 0) {
                 defeat();
             } else if (skipNextTurn) {
                 skipNextTurn = false;
-                appendLog("You're still recovering from your block... your turn is skipped.");
+                appendLog("You're still recovering... your turn is skipped.");
                 scheduleEnemyTurn(600);
             } else {
                 turnLocked = false;
@@ -809,6 +862,7 @@ public class Battle {
             case "gigglebot3000" -> handleGigglebotAttack();
             case "bin izharfed"  -> handleBinIzharfedAttack();
             case "don malek"     -> handleDonMalekAttack();
+            case "ma'am kath"    -> handleMaamKathAttack();
             default              -> defaultEnemyAttack();
         };
     }
@@ -819,6 +873,7 @@ public class Battle {
     private void victory() {
         if (ending) return;
         ending = true;
+        playerWon = true;
         disableButtons();
         typewriterLog("You did it! We saved " + boss + " for real!                                             ", () -> {
             Timer delay = new Timer(1800, e -> end());
@@ -830,6 +885,7 @@ public class Battle {
     private void defeat() {
         if (ending) return;
         ending = true;
+        playerWon = false;
         disableButtons();
         typewriterLog("DON'T DIE, MY FRIEND! NOOO!!", () -> {
             Timer delay = new Timer(1800, e -> end());
@@ -846,7 +902,7 @@ public class Battle {
         active = false;
         ending = true;
 
-        stopAllAudio();   // ← ADD THIS — stops BGM before cleanup
+        stopAllAudio();
 
         if (enemyTurnTimer != null && enemyTurnTimer.isRunning()) {
             enemyTurnTimer.stop();
@@ -938,19 +994,50 @@ public class Battle {
 
     // =========================================================================
     // Typewriter log
+    // Original signature — preserved so all existing call sites are unchanged.
+    // Delegates to the SFX-aware overload with null (no sound effect).
     // =========================================================================
     private void typewriterLog(String message, Runnable onComplete) {
+        typewriterLog(message, null, onComplete);
+    }
+
+    // =========================================================================
+    // SFX-aware typewriter. Plays sfxPath exactly once, on the first character
+    // tick — so the audio starts the instant text begins appearing.
+    //
+    // The boolean[] sfxFired array is a single-element mutable flag captured
+    // by the Timer lambda. A plain boolean cannot be captured and mutated
+    // inside a lambda; the array wrapper is the standard Java idiom for this.
+    //
+    // sfxPath may be null — if so, the SFX block is skipped entirely.
+    // =========================================================================
+    private void typewriterLog(String message, String sfxPath, Runnable onComplete) {
         turnLocked = true;
         setButtonsEnabled(false);
         appendLogRaw("\n");
 
-        char[] chars = message.toCharArray();
-        int[]  idx   = {0};
-        Timer  tw    = new Timer(18, null);
+        char[]    chars    = message.toCharArray();
+        int[]     idx      = {0};
+        boolean[] sfxFired = {false}; // guards exactly one playSFX call per typewriter
+
+        Timer tw = new Timer(18, null);
         tw.addActionListener(e -> {
             if (battleLog == null) { tw.stop(); return; }
+
             if (idx[0] < chars.length) {
+
+                // ── SFX trigger: first character only ────────────────────────
+                // Fires on tick 0 — the same frame the first character appears.
+                // sfxFired[0] ensures it never triggers again on ticks 1-N,
+                // even if the timer fires faster than expected.
+                if (!sfxFired[0] && sfxPath != null) {
+                    playSFX(sfxPath);
+                    sfxFired[0] = true;
+                }
+                // ─────────────────────────────────────────────────────────────
+
                 appendLogRaw(String.valueOf(chars[idx[0]++]));
+
             } else {
                 tw.stop();
                 appendLogRaw("\n");
@@ -1004,7 +1091,7 @@ public class Battle {
         for (JButton b : new JButton[]{fightButton, checkButton, blockButton, healButton})
             if (b != null) b.setBackground(new Color(50, 50, 50));
     }
-    
+
     // =========================================================================
     // Music — filesystem-based loading, looping, with volume control.
     // Stores the Clip as a field so it can be stopped cleanly in end().
@@ -1025,7 +1112,7 @@ public class Battle {
             bgmClip = AudioSystem.getClip();
             bgmClip.open(audioStream);
 
-            setVolume(bgmClip, 0.85f); // 85% volume → ~-1.41 dB
+            setVolume(bgmClip, 0.3f); // 85% volume → ~-1.41 dB
 
             bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
             bgmClip.start();
@@ -1098,11 +1185,11 @@ public class Battle {
     }
 
     // =========================================================================
-    // Convenience overload — plays SFX at full volume without specifying gain.
+    // Convenience overload — plays SFX at 90% volume without specifying gain.
     // Use this when you don't need per-effect volume tuning.
     // =========================================================================
     public void playSFX(String filePath) {
-        playSFX(filePath, 0.9f);
+        playSFX(filePath, 0.4f);
     }
 
     // =========================================================================
@@ -1163,7 +1250,7 @@ public class Battle {
     }
 
     // =========================================================================
-    // Stops BGM. Unchanged except for the added stopAllSFX() call.
+    // Stops BGM and releases its audio line.
     // =========================================================================
     public void stopSound() {
         if (bgmClip != null) {
@@ -1174,10 +1261,14 @@ public class Battle {
     }
 
     // =========================================================================
-    // Full audio teardown — call this from end() to clean up everything.
+    // Full audio teardown — called from end() to clean up everything.
     // =========================================================================
     public void stopAllAudio() {
         stopSound();    // BGM
         stopAllSFX();   // Any SFX still playing (e.g. attack sound mid-animation)
+    }
+    
+    public boolean didPlayerWin() {
+        return playerWon;
     }
 }

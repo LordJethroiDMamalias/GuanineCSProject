@@ -6,7 +6,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.net.URL;
+import java.io.File;
 
 public class G7_Room1_PD4 implements KeyListener {
 
@@ -15,15 +15,14 @@ public class G7_Room1_PD4 implements KeyListener {
 
     public static void playMusic(String filename) {
         try {
-            if (backgroundMusic != null && backgroundMusic.isRunning()) {
-                return; // already playing
-            }
-            URL url = G7_Room1_PD4.class.getResource(filename);
-            if (url == null) {
+            if (backgroundMusic != null && backgroundMusic.isRunning()) return;
+
+            File f = new File(filename);
+            if (!f.exists()) {
                 System.err.println("Music file not found: " + filename);
                 return;
             }
-            AudioInputStream audioIn = AudioSystem.getAudioInputStream(url);
+            AudioInputStream audioIn = AudioSystem.getAudioInputStream(f);
             backgroundMusic = AudioSystem.getClip();
             backgroundMusic.open(audioIn);
             backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
@@ -40,7 +39,6 @@ public class G7_Room1_PD4 implements KeyListener {
         }
     }
 
-    // ---------- rest of the class unchanged ----------
     final int TILE         = 40;
     final int PANEL_WIDTH  = 660;
     final int PANEL_HEIGHT = 660;
@@ -76,12 +74,17 @@ public class G7_Room1_PD4 implements KeyListener {
     // ── Swing ──────────────────────────────────────────────────────────────────
     JFrame       frame;
     JLayeredPane layers;
-    JLabel[]     bgLabels;      // floor tiles (layer 0)
-    JLabel[]     entityLabels;  // props, NPCs, player (layer 1)
-    ImageIcon[]  defaultIcons;  // store original icon for each cell (for restoring)
+    JLabel[]     bgLabels;
+    JLabel[]     entityLabels;
+    ImageIcon[]  defaultIcons;
 
-    // ── Images ─────────────────────────────────────────────────────────────────
-    ImageIcon imgPlayerUp, imgPlayerDown, imgPlayerLeft, imgPlayerRight;
+    // ── Images (G4-style 4-frame walk arrays) ─────────────────────────────────
+    ImageIcon[] pUp    = new ImageIcon[4];
+    ImageIcon[] pDown  = new ImageIcon[4];
+    ImageIcon[] pLeft  = new ImageIcon[4];
+    ImageIcon[] pRight = new ImageIcon[4];
+    int walkFrame = 0;
+
     ImageIcon imgNpc, imgDoor, imgFloor, imgSlot, imgTable, imgPlant;
     ImageIcon imgChairLeft, imgChairRight, imgChip;
 
@@ -98,38 +101,43 @@ public class G7_Room1_PD4 implements KeyListener {
     public static int carriedCoins = 0;
 
     // ── Slot machine state ─────────────────────────────────────────────────────
-    private boolean              isSlotSpinning  = false;
-    private boolean              countdownActive = false;
-    private javax.swing.Timer    countdownTimer;
-    private JLabel               countdownLabel;
+    private boolean           isSlotSpinning  = false;
+    private boolean           countdownActive = false;
+    private javax.swing.Timer countdownTimer;
+    private JLabel            countdownLabel;
 
     // ──────────────────────────────────────────────────────────────────────────
 
     public G7_Room1_PD4() {
-        // Start background music when game starts
-        playMusic("/music/RYAN.wav");
+        playMusic("music/RYAN.wav");
 
         frame = new JFrame("Room 1 - G7 Casino");
-        imgPlayerUp    = safeIcon("images/G7_player_up.png", TILE, TILE, Color.BLUE);
-        imgPlayerDown  = safeIcon("images/G7_player_down.png", TILE, TILE, Color.BLUE);
-        imgPlayerLeft  = safeIcon("images/G7_player_left.png", TILE, TILE, Color.BLUE);
-        imgPlayerRight = safeIcon("images/G7_player_right.png", TILE, TILE, Color.BLUE);
-        imgNpc         = safeIcon("images/G7_npc.png", TILE, TILE, Color.GREEN);
-        imgDoor        = safeIcon("images/G7_enemy.png", TILE, TILE, Color.RED);
-        imgFloor       = safeIcon("images/G7_floor.png", TILE, TILE, Color.LIGHT_GRAY);
-        imgSlot        = safeIcon("images/G7_slotmachines.png", TILE*2, TILE*3, Color.MAGENTA);
-        imgTable       = safeIcon("images/G7_table.png", TILE*2, TILE*2, Color.ORANGE);
-        imgPlant       = safeIcon("images/G7_plant.png", TILE, TILE, Color.CYAN);
-        imgChairLeft   = safeIcon("images/G7_chair_left.png", TILE, TILE, Color.BLUE);
-        imgChairRight  = safeIcon("images/G7_chair_right.png", TILE, TILE, Color.GREEN);
-        imgChip        = safeIcon("images/G7_chip.png", 32, 32, Color.YELLOW);
-        
+
+        // G4-style: 4 frames per direction, named up_1.png … up_4.png
+        for (int i = 0; i < 4; i++) {
+            pUp[i]    = safeIcon("images/up_"    + (i + 1) + ".png", TILE, TILE, Color.BLUE);
+            pDown[i]  = safeIcon("images/down_"  + (i + 1) + ".png", TILE, TILE, Color.BLUE);
+            pLeft[i]  = safeIcon("images/left_"  + (i + 1) + ".png", TILE, TILE, Color.BLUE);
+            pRight[i] = safeIcon("images/right_" + (i + 1) + ".png", TILE, TILE, Color.BLUE);
+        }
+
+        imgNpc        = safeIcon("images/G7_npc.png",             TILE,   TILE,   Color.GREEN);
+        imgDoor       = safeIcon("images/G7_enemy.png",           TILE,   TILE,   Color.RED);
+        imgFloor      = safeIcon("images/G7_floor.png",           TILE,   TILE,   Color.LIGHT_GRAY);
+        imgSlot       = safeIcon("images/G7_slotmachines.png", TILE*2, TILE*3, Color.MAGENTA);
+        imgTable      = safeIcon("images/G7_table.png",        TILE*2, TILE*2, Color.ORANGE);
+        imgPlant      = safeIcon("images/G7_plant.png",        TILE,   TILE,   Color.CYAN);
+        imgChairLeft  = safeIcon("images/G7_chair_left.png",      TILE,   TILE,   Color.BLUE);
+        imgChairRight = safeIcon("images/G7_chair_right.png",     TILE,   TILE,   Color.GREEN);
+        imgChip       = safeIcon("images/G7_chip.png",            32,     32,     Color.YELLOW);
+
         initMazeAndChairs();
         loadSaveData();
+        saveProgress();
         setFrame();
     }
 
-    // ── Frame setup (matches G4 pattern) ──────────────────────────────────────
+    // ── Frame setup ───────────────────────────────────────────────────────────
 
     public void setFrame() {
         layers = new JLayeredPane();
@@ -168,24 +176,24 @@ public class G7_Room1_PD4 implements KeyListener {
                     w = 2; h = 2;
                 } else {
                     switch (ch) {
-                        case 'P' -> { entityLabels[idx].setIcon(imgPlant); defaultIcons[idx] = imgPlant; }
-                        case 'N' -> { entityLabels[idx].setIcon(imgNpc);   defaultIcons[idx] = imgNpc; }
-                        case 'E' -> { entityLabels[idx].setIcon(imgDoor);  defaultIcons[idx] = imgDoor; }
-                        case 'L' -> { entityLabels[idx].setIcon(imgChairLeft); defaultIcons[idx] = imgChairLeft; }
+                        case 'P' -> { entityLabels[idx].setIcon(imgPlant);      defaultIcons[idx] = imgPlant; }
+                        case 'N' -> { entityLabels[idx].setIcon(imgNpc);        defaultIcons[idx] = imgNpc; }
+                        case 'E' -> { entityLabels[idx].setIcon(imgDoor);       defaultIcons[idx] = imgDoor; }
+                        case 'L' -> { entityLabels[idx].setIcon(imgChairLeft);  defaultIcons[idx] = imgChairLeft; }
                         case 'R' -> { entityLabels[idx].setIcon(imgChairRight); defaultIcons[idx] = imgChairRight; }
                     }
                 }
 
-                // Player
+                // Player starts on frame 0, facing down — matches G4
                 if (r == playerRow && c == playerCol) {
-                    entityLabels[idx].setIcon(imgPlayerDown);
+                    entityLabels[idx].setIcon(pDown[0]);
                 }
 
                 layers.add(entityLabels[idx], new Rectangle(c, r, w, h), Integer.valueOf(1));
             }
         }
 
-        // Layer 2 — coin HUD (top-right corner)
+        // Layer 2 — coin HUD
         JLabel chipLabel = new JLabel(imgChip);
         layers.add(chipLabel, new Rectangle(mapWidth - 2, 0, 1, 1), Integer.valueOf(2));
 
@@ -195,7 +203,7 @@ public class G7_Room1_PD4 implements KeyListener {
         layers.add(coinLabel, new Rectangle(mapWidth - 4, 0, 2, 1), Integer.valueOf(2));
         new javax.swing.Timer(100, e -> coinLabel.setText(String.format("%4d", coins))).start();
 
-        // Layer 3 — countdown overlay (hidden until slot spins)
+        // Layer 3 — countdown overlay
         countdownLabel = new JLabel("", SwingConstants.CENTER);
         countdownLabel.setForeground(Color.WHITE);
         countdownLabel.setFont(new Font("Arial", Font.BOLD, 28));
@@ -215,21 +223,39 @@ public class G7_Room1_PD4 implements KeyListener {
 
     // ── Image helper ──────────────────────────────────────────────────────────
 
-    private ImageIcon safeIcon(String path, int w, int h, Color fallback) {
-        java.net.URL url = getClass().getResource(path);
-        Image img;
-        if (url != null) {
-            img = new ImageIcon(url).getImage().getScaledInstance(w, h, Image.SCALE_SMOOTH);
+    private ImageIcon safeIcon(String path, int w, int h, Color fallbackColor) {
+        File f = new File(path);
+        BufferedImage img;
+        if (f.exists()) {
+            try {
+                Image original = new ImageIcon(f.getAbsolutePath()).getImage();
+                img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g2 = img.createGraphics();
+                g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g2.drawImage(original, 0, 0, w, h, null);
+                g2.dispose();
+            } catch (Exception e) {
+                img = createFallbackImage(w, h, fallbackColor);
+            }
         } else {
             System.err.println("WARNING: missing " + path);
-            BufferedImage bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g2 = bi.createGraphics();
-            g2.setColor(fallback); g2.fillRect(0, 0, w, h);
-            g2.setColor(Color.BLACK); g2.drawRect(0, 0, w-1, h-1);
-            g2.dispose();
-            img = bi;
+            img = createFallbackImage(w, h, fallbackColor);
         }
         return new ImageIcon(img);
+    }
+
+    private BufferedImage createFallbackImage(int w, int h, Color color) {
+        BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2 = img.createGraphics();
+        g2.setColor(color);
+        g2.fillRect(0, 0, w, h);
+        g2.setColor(Color.BLACK);
+        g2.drawRect(0, 0, w - 1, h - 1);
+        g2.setFont(new Font("Arial", Font.BOLD, 10));
+        g2.drawString("?", w / 2 - 3, h / 2 + 4);
+        g2.dispose();
+        return img;
     }
 
     // ── Grid helpers ───────────────────────────────────────────────────────────
@@ -243,7 +269,6 @@ public class G7_Room1_PD4 implements KeyListener {
     }
 
     private void addChairsAroundSlot(int r, int c) {
-        // Shift chairs down by 1 tile – place at row r+1 (below the slot block)
         int chairRow = r + 1;
         if (chairRow >= rows) return;
 
@@ -256,18 +281,18 @@ public class G7_Room1_PD4 implements KeyListener {
 
     private boolean isSlotTopLeft(int r, int c) {
         if (mazeGrid[r][c] != 'S') return false;
-        boolean noSLeft = (c == 0) || mazeGrid[r][c-1] != 'S';
+        boolean noSLeft = (c == 0) || mazeGrid[r][c - 1] != 'S';
         return noSLeft && (r % 2 == 1);
     }
 
     private boolean isTableTopLeft(int r, int c) {
         if (r + 1 >= rows || c + 1 >= cols) return false;
-        return mazeGrid[r][c]=='T' && mazeGrid[r][c+1]=='T'
-            && mazeGrid[r+1][c]=='T' && mazeGrid[r+1][c+1]=='T';
+        return mazeGrid[r][c] == 'T' && mazeGrid[r][c + 1] == 'T'
+            && mazeGrid[r + 1][c] == 'T' && mazeGrid[r + 1][c + 1] == 'T';
     }
 
     private boolean isAdjacentToSlotMachine() {
-        int[][] dirs = {{-1,0},{1,0},{0,-1},{0,1}};
+        int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         for (int[] d : dirs) {
             int nr = playerRow + d[0], nc = playerCol + d[1];
             if (nr >= 0 && nr < rows && nc >= 0 && nc < cols)
@@ -277,7 +302,7 @@ public class G7_Room1_PD4 implements KeyListener {
     }
 
     private Point getAdjacentTile(char target) {
-        int[][] dirs = {{-1,0},{1,0},{0,-1},{0,1}};
+        int[][] dirs = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         for (int[] d : dirs) {
             int nr = playerRow + d[0], nc = playerCol + d[1];
             if (nr >= 0 && nr < rows && nc >= 0 && nc < cols)
@@ -286,14 +311,15 @@ public class G7_Room1_PD4 implements KeyListener {
         return null;
     }
 
-    // ── Player label helpers (restore original icon when leaving) ──────────────
+    // ── Player label helpers ───────────────────────────────────────────────────
 
+    // G4-style: index into the frame array with walkFrame
     private ImageIcon currentPlayerIcon() {
         return switch (facingDirection) {
-            case "UP"    -> imgPlayerUp;
-            case "LEFT"  -> imgPlayerLeft;
-            case "RIGHT" -> imgPlayerRight;
-            default      -> imgPlayerDown;
+            case "UP"    -> pUp[walkFrame];
+            case "LEFT"  -> pLeft[walkFrame];
+            case "RIGHT" -> pRight[walkFrame];
+            default      -> pDown[walkFrame];
         };
     }
 
@@ -304,7 +330,6 @@ public class G7_Room1_PD4 implements KeyListener {
 
     private void clearPlayerAt(int r, int c) {
         int idx = r * cols + c;
-        // Restore the default icon (chair, plant, NPC, etc.) instead of clearing to null
         if (defaultIcons[idx] != null) {
             entityLabels[idx].setIcon(defaultIcons[idx]);
         } else {
@@ -374,7 +399,7 @@ public class G7_Room1_PD4 implements KeyListener {
                     } else {
                         showDialog(new String[]{"Aw, you lost.", "Want to try again?"}, () -> {
                             isSlotSpinning = false;
-                            startSlotMachine(); // auto-retry
+                            startSlotMachine();
                         });
                     }
                     layers.repaint();
@@ -412,19 +437,27 @@ public class G7_Room1_PD4 implements KeyListener {
         }
     }
 
-    // ── Movement ──────────────────────────────────────────────────────────────
+    // ── Movement (G4-style) ───────────────────────────────────────────────────
 
     void movePlayer(int dr, int dc) {
         if (dialog.isVisible() || isSlotSpinning) return;
+
         int nr = playerRow + dr, nc = playerCol + dc;
         if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) return;
+
         char tile = mazeGrid[nr][nc];
-        if (tile=='S'||tile=='T'||tile=='P'||tile=='N'||tile=='M') return;
-        if (tile=='E') { handleDoorGuard(); return; }
-        clearPlayerAt(playerRow, playerCol);
-        playerRow = nr; playerCol = nc;
-        updatePlayerLabel();
-        layers.repaint();
+
+        boolean isBlocked = (tile == 'S' || tile == 'T' || tile == 'P'
+                          || tile == 'N' || tile == 'M');
+
+        if (tile == 'E') { handleDoorGuard(); return; }
+
+        if (!isBlocked && (tile == '0' || tile == 'L' || tile == 'R')) {
+            clearPlayerAt(playerRow, playerCol);
+            playerRow = nr;
+            playerCol = nc;
+            walkFrame = (walkFrame + 1) % 4;   // G4: advance frame on every successful move
+        }
     }
 
     void interact() {
@@ -443,28 +476,32 @@ public class G7_Room1_PD4 implements KeyListener {
         new G7_Room2_PD6();
     }
 
-    // ── Key input ─────────────────────────────────────────────────────────────
+    // ── Key input (G4-style) ──────────────────────────────────────────────────
 
     @Override
     public void keyPressed(KeyEvent e) {
         if (dialog.isVisible() || Battle.paused) return;
         if (countdownActive) return;
 
+        int dr = 0, dc = 0;
         switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP,    KeyEvent.VK_W -> facingDirection = "UP";
-            case KeyEvent.VK_DOWN,  KeyEvent.VK_S -> facingDirection = "DOWN";
-            case KeyEvent.VK_LEFT,  KeyEvent.VK_A -> facingDirection = "LEFT";
-            case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> facingDirection = "RIGHT";
+            case KeyEvent.VK_W -> { facingDirection = "UP";    dr = -1; }
+            case KeyEvent.VK_S -> { facingDirection = "DOWN";  dr =  1; }
+            case KeyEvent.VK_A -> { facingDirection = "LEFT";  dc = -1; }
+            case KeyEvent.VK_D -> { facingDirection = "RIGHT"; dc =  1; }
         }
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_UP,    KeyEvent.VK_W -> movePlayer(-1,  0);
-            case KeyEvent.VK_DOWN,  KeyEvent.VK_S -> movePlayer( 1,  0);
-            case KeyEvent.VK_LEFT,  KeyEvent.VK_A -> movePlayer( 0, -1);
-            case KeyEvent.VK_RIGHT, KeyEvent.VK_D -> movePlayer( 0,  1);
-            case KeyEvent.VK_SPACE                -> interact();
+
+        if (dr != 0 || dc != 0) {
+            movePlayer(dr, dc);
         }
+
+        // G4 pattern: icon applied after the movement block, every keypress
         updatePlayerLabel();
         layers.repaint();
+
+        if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+            interact();
+        }
     }
 
     @Override public void keyReleased(KeyEvent e) {}

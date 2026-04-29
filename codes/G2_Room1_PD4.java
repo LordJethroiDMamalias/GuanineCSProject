@@ -195,7 +195,9 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
         }
 
         System.out.println("Room memory allocation sequence finished.");
+        MusicPlayer.start("music/Rainity.wav");
         loadSaveData();
+        saveProgress();
     }
 
     private void loadSaveData() {
@@ -582,7 +584,6 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
     @Override public void actionPerformed(ActionEvent e) {}
 
     public static void main(String[] args) {
-        MusicPlayer.start("music/Green Room.wav");
 
         SwingUtilities.invokeLater(() -> {
             try {
@@ -591,5 +592,6 @@ public class G2_Room1_PD4 implements KeyListener, ActionListener {
                 e.printStackTrace();
             }
         });
+        MusicPlayer.start("music/Rainity.wav");
     }
 }

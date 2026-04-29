@@ -70,10 +70,10 @@ public class G4_Room2_PD6 implements KeyListener {
         jetroids = scale("images/G4_jetroids.png", 660, 660);
 
         for (int i = 0; i < 4; i++) {
-            pUp[i]    = scale("images/up_"    + (i + 1) + ".png", tw / 2, th);
-            pDown[i]  = scale("images/down_"  + (i + 1) + ".png", tw / 2, th);
-            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png", tw / 2, th);
-            pRight[i] = scale("images/right_" + (i + 1) + ".png", tw / 2, th);
+            pUp[i]    = scale("images/up_"    + (i + 1) + ".png", tw, th);
+            pDown[i]  = scale("images/down_"  + (i + 1) + ".png", tw, th);
+            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png", tw, th);
+            pRight[i] = scale("images/right_" + (i + 1) + ".png", tw, th);
         }
 
         // Invisible NPC sprites
@@ -279,7 +279,6 @@ public class G4_Room2_PD6 implements KeyListener {
                     boolean landedOnExit = (characterPlace[characterPosition] == 7);
 
                     if (landedOnExit) {
-                        transitionToPD4();
                         return; // stop all further processing on this key event
                     }
                 }
@@ -331,15 +330,19 @@ public class G4_Room2_PD6 implements KeyListener {
                                 "i let it sit around my head because of that.",
                                 "..yeah, that's enough talk.",
                                 "better get moving.",
-                                "talk to me when you're ready to go to the next guy."
+                                "...Main, huh?",
+                                "alright, alright. if i can remember, she shouldn't be far.",
+                                "let's get goin'."
                             }, null, null, mapWidth, mapHeight);
                             return;
                         }
-                        dialog.show(layers, new String[]{
-                            "...Main, huh?",
-                            "alright, alright. if i can remember, she shouldn't be far.",
-                            "let's get goin'."
-                        }, null, null, mapWidth, mapHeight);
+                        Timer monitor = new Timer(100, ev -> {
+                            System.out.println("Sending to IVy...");
+                            ((Timer) ev.getSource()).stop();
+                            saveProgress();
+                            transitionToG6();
+                        });
+                        monitor.start();
                         return;
                     }
 
@@ -389,9 +392,9 @@ public class G4_Room2_PD6 implements KeyListener {
                         if (!dialog.isVisible()) {
                             G4_Room1_PD4.stopSharedBGM();
                             ((Timer) ev.getSource()).stop();
-                            battle.start(frame, "images/G4_jetroidsBG.png", "Jetroids");
-                            waitForBattleEnd(() -> {
-                                if (battle.didPlayerWin()) {
+                            battle.start(frame, "images/G4_jetroidsBG.png", "Jetroids"); //battle start
+                            waitForBattleEnd(() -> { //begin.
+                                if (battle.didPlayerWin()) { //checks if player won; set already in battle.java
                                     if (!SaveSystem.isDefeated("Jetroids")) {
                                         SaveSystem.markDefeated("Jetroids");
                                         battleTriggered = true;
@@ -480,12 +483,13 @@ public class G4_Room2_PD6 implements KeyListener {
      * Closes this room and reopens PD4.
      * The {@code transitioning} flag prevents double-fire from held keys.
      */
-    private void transitionToPD4() {
+    private void transitionToG6() {
         if (transitioning) return;
         transitioning = true;
         stopSound();
+        saveProgress();
         frame.dispose();
-        SwingUtilities.invokeLater(() -> new G4_Room1_PD4().setFrame());
+        SwingUtilities.invokeLater(() -> new G6_Room1_PD4().setFrame());
     }
 
     // =========================================================================

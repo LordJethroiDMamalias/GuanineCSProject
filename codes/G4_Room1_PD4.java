@@ -97,6 +97,8 @@ public class G4_Room1_PD4 implements KeyListener {
     private Clip bgmClip = null;
 
     public G4_Room1_PD4() {
+        stopSharedBGM();
+        playSharedBGM("music/Jetroids.wav");
         frame = new JFrame();
         int tw = frameWidth  / mapWidth;
         int th = frameHeight / mapHeight;
@@ -107,10 +109,10 @@ public class G4_Room1_PD4 implements KeyListener {
         pipe    = scale("images/G4_pipe.png",    tw, th);
 
         for (int i = 0; i < 4; i++) {
-            pUp[i]    = scale("images/up_"    + (i + 1) + ".png", tw / 2, th);
-            pDown[i]  = scale("images/down_"  + (i + 1) + ".png", tw / 2, th);
-            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png", tw / 2, th);
-            pRight[i] = scale("images/right_" + (i + 1) + ".png", tw / 2, th);
+            pUp[i]    = scale("images/up_"    + (i + 1) + ".png", tw, th);
+            pDown[i]  = scale("images/down_"  + (i + 1) + ".png", tw, th);
+            pLeft[i]  = scale("images/left_"  + (i + 1) + ".png", tw, th);
+            pRight[i] = scale("images/right_" + (i + 1) + ".png", tw, th);
         }
 
         NPCIcon  = scale("images/G4_bro1.png",   tw * 4, th * 6);
@@ -509,6 +511,7 @@ public class G4_Room1_PD4 implements KeyListener {
         if (transitioning) return;
         transitioning = true;
 
+        saveProgress();
         frame.dispose();
         SwingUtilities.invokeLater(() -> new G4_Room2_PD6().setFrame());
     }
@@ -566,7 +569,6 @@ public class G4_Room1_PD4 implements KeyListener {
     }
 
     public static void main(String[] args) {
-        playSharedBGM("music/Jetroids.wav");
         new G4_Room1_PD4().setFrame();
     }
 }

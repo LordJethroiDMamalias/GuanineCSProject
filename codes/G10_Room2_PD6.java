@@ -694,5 +694,6 @@ public class G10_Room2_PD6 extends JPanel implements KeyListener {
         f.pack();
         f.setLocationRelativeTo(null);
         f.setVisible(true);
+        f.setResizable(false);
     }
 }

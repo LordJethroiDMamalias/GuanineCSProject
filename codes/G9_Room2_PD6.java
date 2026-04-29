@@ -128,6 +128,7 @@ public class G9_Room2_PD6 implements KeyListener {
             gridSlots[i].setVerticalAlignment(JLabel.CENTER);
         }
         loadSaveData();
+        saveProgress();
     }
 
     
@@ -266,6 +267,7 @@ public class G9_Room2_PD6 implements KeyListener {
                                     cutscene.setVisible(false);
                                     setBlackOverlay(false); 
                                     ((Timer) end.getSource()).stop();
+                                    transitionToG10();
                                 }).start();
                             } else {
                                 battleTriggered = false;
@@ -279,6 +281,11 @@ public class G9_Room2_PD6 implements KeyListener {
                 }).start();
             }
         }).start();
+    }
+    
+    private void transitionToG10() {
+        frame.dispose();
+        SwingUtilities.invokeLater(() -> new G10_Room1_PD4());
     }
     
     private void loadSaveData() {

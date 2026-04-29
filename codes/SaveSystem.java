@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * SaveSystem — persistent game state for map, flags, boss defeats, and time.
+ * SaveSystem — persistent game state for map, flags, boss defeats, time, and record.
  *
  * File format  (docs/saveFile.txt):
  * ──────────────────────────────────
@@ -14,12 +14,19 @@ import java.util.List;
  *   FLAGS:flag1,flag2,flag3
  *   BATTLES:boss1,boss2,boss3
  *   TIME:secondsElapsed
+ *   RECORD:fastestCompletionSeconds
  *
  * ── Time tracking ────────────────────────────────────────────────────────────
  * Call SaveSystem.startTimer() when gameplay begins (or resumes after load).
  * The timer accumulates seconds in the background. When saving, call
  * SaveSystem.saveGame(builder) — the system automatically adds the current
  * session's elapsed seconds to whatever base time was loaded from disk.
+ *
+ * ── Record tracking ──────────────────────────────────────────────────────────
+ * RECORD stores the fastest (lowest) total completion time ever saved.
+ * On every save, the current time is compared with the stored record and the
+ * lower value is written back. A missing RECORD line is treated as "no record
+ * yet" (0) and is handled safely — old save files load without error.
  *
  * ── Boss defeat rules ─────────────────────────────────────────────────────────
  * • isDefeated(boss) — returns true if boss is permanently beaten.
@@ -44,6 +51,7 @@ import java.util.List;
  *       new SaveSystem.SaveData.Builder("G2_Room2_PD6")
  *           .flag("item_lipstick")
  *           .battles(data.battles)             // carry over past defeats
+ *           .record(data.recordSeconds)        // carry over existing record
  *   );
  *
  *   // On map transition (no save needed — just query state):
@@ -57,6 +65,7 @@ public class SaveSystem {
     public static final String KEY_FLAGS   = "FLAGS";
     public static final String KEY_BATTLES = "BATTLES";
     public static final String KEY_TIME    = "TIME";
+    public static final String KEY_RECORD  = "RECORD";
 
     // =========================================================================
     // Time tracking
@@ -67,6 +76,9 @@ public class SaveSystem {
 
     /** Accumulated seconds from all previous sessions (loaded from file). */
     private static long baseTimeSeconds = 0;
+
+    /** Fastest recorded completion time loaded from disk. 0 = no record yet. */
+    private static long recordSeconds = 0;
 
     /**
      * Start (or restart) the session timer.
@@ -88,6 +100,14 @@ public class SaveSystem {
         if (sessionStartMs < 0) return baseTimeSeconds;
         long sessionSeconds = (System.currentTimeMillis() - sessionStartMs) / 1000L;
         return baseTimeSeconds + sessionSeconds;
+    }
+
+    /**
+     * Returns the fastest recorded completion time in seconds.
+     * Returns 0 if no record has been set yet.
+     */
+    public static long getRecordSeconds() {
+        return recordSeconds;
     }
 
     /**
@@ -165,12 +185,14 @@ public class SaveSystem {
         public final List<String> flags;
         public final List<String> battles;
         public final long         timeSeconds;
+        public final long         recordSeconds;
 
         private SaveData(Builder b) {
-            this.map         = b.map;
-            this.flags       = List.copyOf(b.flags);
-            this.battles     = List.copyOf(b.battles);
-            this.timeSeconds = b.timeSeconds;
+            this.map           = b.map;
+            this.flags         = List.copyOf(b.flags);
+            this.battles       = List.copyOf(b.battles);
+            this.timeSeconds   = b.timeSeconds;
+            this.recordSeconds = b.recordSeconds;
         }
 
         public static SaveData defaultData(String mapName) {
@@ -204,12 +226,20 @@ public class SaveSystem {
             return String.format("%02d:%02d:%02d", h, m, s);
         }
 
+        public String formattedRecord() {
+            long h = recordSeconds / 3600;
+            long m = (recordSeconds % 3600) / 60;
+            long s = recordSeconds % 60;
+            return String.format("%02d:%02d:%02d", h, m, s);
+        }
+
         @Override
         public String toString() {
             return "SaveData{map=" + map
                     + ", flags=" + flags
                     + ", battles=" + battles
-                    + ", time=" + formattedTime() + "}";
+                    + ", time=" + formattedTime()
+                    + ", record=" + formattedRecord() + "}";
         }
 
         // ── Builder ───────────────────────────────────────────────────────────
@@ -221,6 +251,7 @@ public class SaveSystem {
          *       new SaveSystem.SaveData.Builder("G2_Room2_PD6")
          *           .flag("item_lipstick")
          *           .battles(SaveSystem.getDefeatedBosses())
+         *           .record(data.recordSeconds)
          *   );
          *   // Time is injected automatically by saveGame() — no need to set it.
          */
@@ -228,7 +259,8 @@ public class SaveSystem {
             private final String       map;
             private final List<String> flags   = new ArrayList<>();
             private final List<String> battles = new ArrayList<>();
-            private long               timeSeconds = 0;
+            private long               timeSeconds   = 0;
+            private long               recordSeconds = 0;
 
             public Builder(String mapName) {
                 this.map = mapName;
@@ -264,6 +296,15 @@ public class SaveSystem {
                 return this;
             }
 
+            /**
+             * Pass the previously loaded recordSeconds so the save system can
+             * compare and keep whichever value is lower.
+             */
+            public Builder record(long seconds) {
+                this.recordSeconds = seconds;
+                return this;
+            }
+
             public SaveData build() { return new SaveData(this); }
         }
     }
@@ -276,7 +317,7 @@ public class SaveSystem {
      * Save the game. The current total playtime is injected automatically —
      * you do NOT need to call builder.time() yourself.
      *
-     * @param builder  a populated Builder (map + flags + battles)
+     * @param builder  a populated Builder (map + flags + battles + record)
      */
     public static void saveGame(SaveData.Builder builder) {
         // Inject live time — always up to date regardless of when saveGame is called
@@ -289,6 +330,13 @@ public class SaveSystem {
         File dir = new File("docs");
         if (!dir.exists()) dir.mkdirs();
 
+        // Record: keep the lower of the two values.
+        // Treat 0 as "no record set yet" so the first real save always wins.
+        long newRecord = (data.recordSeconds <= 0 || data.timeSeconds < data.recordSeconds)
+                         ? data.timeSeconds
+                         : data.recordSeconds;
+        recordSeconds = newRecord;   // keep static state in sync
+
         try (BufferedWriter bw =
                 new BufferedWriter(new FileWriter(new File(SAVE_PATH), false))) {
 
@@ -296,9 +344,10 @@ public class SaveSystem {
             bw.write(KEY_FLAGS   + ":" + join(data.flags));      bw.newLine();
             bw.write(KEY_BATTLES + ":" + join(data.battles));    bw.newLine();
             bw.write(KEY_TIME    + ":" + data.timeSeconds);      bw.newLine();
+            bw.write(KEY_RECORD  + ":" + newRecord);             bw.newLine();
 
             System.out.println("[SaveSystem] Saved → " + new File(SAVE_PATH).getAbsolutePath()
-                    + "  time=" + data.timeSeconds + "s");
+                    + "  time=" + data.timeSeconds + "s  record=" + newRecord + "s");
 
         } catch (IOException ex) {
             System.err.println("[SaveSystem] Failed to save: " + ex.getMessage());
@@ -324,6 +373,7 @@ public class SaveSystem {
         if (!save.exists()) {
             System.out.println("[SaveSystem] No save file — fresh start.");
             defeatedBosses.clear();
+            recordSeconds = 0;
             return SaveData.defaultData(expectedMap != null ? expectedMap : "");
         }
 
@@ -331,6 +381,7 @@ public class SaveSystem {
         List<String> parsedFlags   = new ArrayList<>();
         List<String> parsedBattles = new ArrayList<>();
         long         parsedTime    = 0;
+        long         parsedRecord  = 0;
 
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(new FileInputStream(save), "UTF-8"))) {
@@ -370,6 +421,14 @@ public class SaveSystem {
                                     + "' — defaulting to 0.");
                         }
                     }
+                    case KEY_RECORD -> {
+                        // Missing RECORD line (old saves) is safe — stays 0
+                        try { parsedRecord = Long.parseLong(value); }
+                        catch (NumberFormatException ex) {
+                            System.err.println("[SaveSystem] Bad RECORD '" + value
+                                    + "' — defaulting to 0.");
+                        }
+                    }
                     // Silently ignore POSITION (legacy) and any unknown keys
                     default ->
                         System.out.println("[SaveSystem] Skipped key: '" + key + "'");
@@ -380,6 +439,7 @@ public class SaveSystem {
             System.err.println("[SaveSystem] Read error: " + ex.getMessage()
                     + " — using defaults.");
             defeatedBosses.clear();
+            recordSeconds = 0;
             return SaveData.defaultData(expectedMap != null ? expectedMap : "");
         }
 
@@ -387,6 +447,9 @@ public class SaveSystem {
             System.out.println("[SaveSystem] WARNING: save is for map '"
                     + parsedMap + "' but current map is '" + expectedMap + "'.");
         }
+
+        // Sync static record field for use by credits / other screens
+        recordSeconds = parsedRecord;
 
         // Populate the static defeated-boss registry for this session
         defeatedBosses.clear();
@@ -396,6 +459,7 @@ public class SaveSystem {
                 .flags(parsedFlags)
                 .battles(parsedBattles)
                 .time(parsedTime)
+                .record(parsedRecord)
                 .build();
 
         System.out.println("[SaveSystem] Loaded → " + result);
@@ -403,8 +467,8 @@ public class SaveSystem {
     }
 
     /** Load without map validation. */
-    public static void loadGame() {
-        loadGame(null);
+    public static SaveData loadGame() {
+        return loadGame(null);
     }
 
     // =========================================================================
@@ -419,6 +483,7 @@ public class SaveSystem {
         defeatedBosses.clear();
         baseTimeSeconds = 0;
         sessionStartMs  = -1;
+        recordSeconds   = 0;
     }
 
     // =========================================================================

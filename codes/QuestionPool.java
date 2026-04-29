@@ -99,4 +99,10 @@ public class QuestionPool {
         private final codes.JarrellePool delegate = new codes.JarrellePool();
         @Override public ChallengeDialog.Question next() { return delegate.next(); }
     }
+
+    /** Ma'am Kath — grammar and school press writing */
+    public static class MaamKathPool implements Pool {
+        private final codes.MaamKathPool delegate = new codes.MaamKathPool();
+        @Override public ChallengeDialog.Question next() { return delegate.next(); }
+    }
 }

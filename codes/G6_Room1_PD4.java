@@ -73,10 +73,8 @@ public class G6_Room1_PD4 implements KeyListener {
         initQuiz();
 
 
-        saveData = SaveSystem.loadGame("G6_Room1_PD4");
-        SaveSystem.startTimer(saveData.timeSeconds);
-
-        for (String b : saveData.battles) SaveSystem.markDefeated(b);
+        loadSaveData();
+        saveProgress();
         // bossDefeated intentionally NOT restored from save —
         // the player must fight Main every session to reach Room 2.
     }
@@ -191,6 +189,8 @@ public class G6_Room1_PD4 implements KeyListener {
         frame.setVisible(true);
         frame.addKeyListener(this);
         dialog.addKey(frame);
+        
+        saveProgress();
 
         startMusic("music/Main.wav");
 
@@ -207,6 +207,33 @@ public class G6_Room1_PD4 implements KeyListener {
                 },
                 null, null, mapw, maph);
         }
+    }
+    
+    private void loadSaveData() {
+        SaveSystem.SaveData save = SaveSystem.loadGame("G6_Room1_PD4");
+
+        if (save.timeSeconds <= 0) {
+            SaveSystem.SaveData pd4Save = SaveSystem.loadGame("G4_Room2_PD6");
+            SaveSystem.startTimer(pd4Save.timeSeconds);
+        } else {
+            SaveSystem.startTimer(save.timeSeconds);
+        }
+
+        if (save.isDefeated("Main")) bossDefeated = true;
+
+        System.out.println("[Room1/PD4] Loaded — "
+                + "BattleDone:" + bossDefeated
+                + "  Time:" + save.formattedTime());
+    }
+
+    // =========================================================================
+    // Save integration — save
+    // =========================================================================
+    private void saveProgress() {
+        SaveSystem.saveGame(
+            new SaveSystem.SaveData.Builder("G6_Room1_PD4")
+                .battles(SaveSystem.getDefeatedBosses())
+        );
     }
 
 
@@ -330,10 +357,7 @@ public class G6_Room1_PD4 implements KeyListener {
 
             // All conditions met — save and transition to Room 2
             // NOTE: Do NOT call stopMusic() here — we pass bgmClip to Room2 so music continues seamlessly
-            SaveSystem.saveGame(
-                new SaveSystem.SaveData.Builder("G6_Room1_PD4")
-                    .battles(SaveSystem.getDefeatedBosses())
-            );
+            saveProgress();
             frame.dispose();
             G6_Room2_PD6 room2 = new G6_Room2_PD6(bgmClip); // pass the live clip
             room2.setFrame();
@@ -356,36 +380,35 @@ public class G6_Room1_PD4 implements KeyListener {
 
         Battle battle = new Battle();
         battle.start(frame, "images/G6_wall.png", "Main");
-
-        javax.swing.Timer poller = new javax.swing.Timer(500, null);
+        waitForBattleEnd(() -> {
+            if (battle.didPlayerWin()) {
+                if (!SaveSystem.isDefeated("Main")) {
+                    SaveSystem.markDefeated("Main");
+                    bossDefeated = true;
+                }
+                dialog.show(frame.getLayeredPane(),
+                    new String[]{
+                        "You have defeated Main, she will now send you to the Chemistry Laboratory.",
+                        "You better escape or face your doom."
+                    },
+                    null, null, mapw, maph);
+                frame.requestFocusInWindow();
+            } else {
+                bossPollerActive = false;
+            }
+            saveProgress();
+        });
+    }
+    
+    private void waitForBattleEnd(Runnable onEnd) {
+        javax.swing.Timer poller = new javax.swing.Timer(200, null);
         poller.addActionListener(ev -> {
-        if (!Battle.paused) {
-            poller.stop();
-            bossPollerActive = false;
-
-            layers.setLayout(mapLayout2);
-            layers.revalidate();
-            layers.repaint();
-
-            startMusic("music/Main.wav");
-
-            bossDefeated = true;
-
-            SaveSystem.saveGame(
-                new SaveSystem.SaveData.Builder("G6_Room1_PD4")
-            );
-
-            // Post-boss dialog
-            dialog.show(frame.getLayeredPane(),
-                new String[]{
-                    "You have defeated Main, she will now send you to the Chemistry Laboratory.",
-                    "You better escape or face your doom."
-                },
-                null, null, mapw, maph);
-
-            frame.requestFocusInWindow();
-        }
-    });
+            if (!Battle.paused) {
+                poller.stop();
+                onEnd.run();
+                startMusic("music/Main.wav");
+            }
+        });
         poller.start();
     }
 

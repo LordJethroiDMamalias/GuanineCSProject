@@ -179,6 +179,29 @@ public class G8_Room1_PD4 implements KeyListener {
         });
 
         SwingUtilities.invokeLater(() -> frame.requestFocusInWindow());
+        loadSaveData();
+        saveProgress();
+    }
+    
+    private void loadSaveData() {
+        SaveSystem.SaveData save = SaveSystem.loadGame("G8_Room1_PD4");
+
+        if (save.timeSeconds <= 0) {
+            SaveSystem.SaveData pd4Save = SaveSystem.loadGame("G7_Room1_PD4");
+            SaveSystem.startTimer(pd4Save.timeSeconds);
+        } else {
+            SaveSystem.startTimer(save.timeSeconds);
+        }
+    }
+
+    // =========================================================================
+    // Save integration — save
+    // =========================================================================
+    private void saveProgress() {
+        SaveSystem.saveGame(
+            new SaveSystem.SaveData.Builder("G8_Room1_PD4")
+                .battles(SaveSystem.getDefeatedBosses())
+        );
     }
 
     private void moveCharacter(int target, int dir) {
@@ -206,6 +229,7 @@ public class G8_Room1_PD4 implements KeyListener {
     private void checkDeath() {
         if (hasBomb[characterPosition]) {
             stopTimers();
+            saveProgress();
             dialog.show(layeredPane, new String[]{"BOOM!", "You were caught in the blast...", "Try again!"}, 
                 null, null, mapWidth, mapHeight, this::restartRoom);
         }
@@ -260,11 +284,11 @@ public class G8_Room1_PD4 implements KeyListener {
             stopTimers();
             dialog.show(layeredPane, 
                 new String[]{"VICTORY!",
-                    "Looks like you survived the bombs, Heh, Lets see you battle me.",
-                    "Teleporting to my lab*"
+                    "Looks like you survived the bombs, heh. See you in my lab.",
                 }, 
                 null, null, mapWidth, mapHeight, 
                 () -> { 
+                    saveProgress();
                     frame.dispose(); 
                     G8_Room2_PD6 nextRoom = new G8_Room2_PD6();
                     nextRoom.setFrame();

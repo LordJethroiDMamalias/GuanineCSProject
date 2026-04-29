@@ -127,6 +127,8 @@ public class G8_Room2_PD6 implements KeyListener {
             monsterLabels[i] = new JLabel();
             monsterLabels[i].setHorizontalAlignment(SwingConstants.CENTER);
         }
+        loadSaveData();
+        saveProgress();
     }
 
     private ImageIcon loadSafeIcon(String path, int w, int h) {
@@ -320,19 +322,14 @@ public class G8_Room2_PD6 implements KeyListener {
             ((Timer) e.getSource()).stop();
             cutscene.setVisible(false);
             stopMusic();
-            G8_Room1_PD4.playMusic("music/GIGGLEBOT3000-boss.wav");
+            //G8_Room1_PD4.playMusic("music/GIGGLEBOT3000-boss.wav");
             battle.start(frame, "images/G8_PD6BG.png", "GIGGLEBOT3000");
             new Timer(500, ev -> {
                 if (!Battle.paused) {
                     ((Timer) ev.getSource()).stop();
                     if (battle.hp > 0) { 
                         saveProgress();
-                        ImageIcon victoryImg = loadSafeIcon("images/PDs game/map2/cutscn2.png", frameWidth, frameHeight);
-                        if (victoryImg != null) cutscene.setIcon(victoryImg);
-                        cutscene.setVisible(true);
-                        new Timer(5000, end -> {
-                            ((Timer) end.getSource()).stop();
-                            cutscene.setVisible(false);
+                        new Timer(100, end -> {
                             showVictoryCutscene();
                         }).start();
                     } else {
@@ -380,7 +377,7 @@ public class G8_Room2_PD6 implements KeyListener {
             "GIGGLEBOT3000: SPECIMEN ACQUIRED. TRANSPORTING TO LAB.",
             "Everything goes dark as you are dragged through a metal corridor.",
             "You wake up... somewhere different. The lab."
-        }, null, null, mapWidth, mapHeight, () -> { timerLabel.setText(""); });
+        }, null, null, mapWidth, mapHeight, () -> { timerLabel.setText(""); triggerBossBattleSequence(0);});
     }
 
     private void showVictoryCutscene() {
@@ -390,15 +387,37 @@ public class G8_Room2_PD6 implements KeyListener {
             "A door at the far end slides open, you see a helicopter and take it to the clouds...",
             "[END OF Gigglebot — next area loading...]"
         }, null, null, mapWidth, mapHeight, () -> {
-            JOptionPane.showMessageDialog(frame, "PD6 complete!");
-            System.exit(0);
+            transitionToG9();
         });
     }
 
-    private void saveProgress() {
-        SaveSystem.saveGame(new SaveSystem.SaveData.Builder("G8_Room2_PD6").battles(SaveSystem.getDefeatedBosses()));
+    private void transitionToG9() {
+        saveProgress();
+        frame.dispose();
+        SwingUtilities.invokeLater(() -> new G9_Room1_PD4().setFrame());
+    }
+    
+    private void loadSaveData() {
+        SaveSystem.SaveData save = SaveSystem.loadGame("G8_Room2_PD6");
+
+        if (save.timeSeconds <= 0) {
+            SaveSystem.SaveData pd4Save = SaveSystem.loadGame("G8_Room1_PD4");
+            SaveSystem.startTimer(pd4Save.timeSeconds);
+        } else {
+            SaveSystem.startTimer(save.timeSeconds);
+        }
     }
 
+    // =========================================================================
+    // Save integration — save
+    // =========================================================================
+    private void saveProgress() {
+        SaveSystem.saveGame(
+            new SaveSystem.SaveData.Builder("G8_Room2_PD6")
+                .battles(SaveSystem.getDefeatedBosses())
+        );
+    }
+    
     @Override public void keyTyped(KeyEvent e) {}
     @Override public void keyReleased(KeyEvent e) {}
 
