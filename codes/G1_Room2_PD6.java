@@ -320,7 +320,7 @@ public class G1_Room2_PD6 extends JPanel implements KeyListener {
 
             JFrame top = (JFrame) SwingUtilities.getWindowAncestor(this);
             G1_Room1_PD4.stopMusic();
-            battle.start(top, "viness.png", "IVy");
+            battle.start(top, "G1_viness.png", "IVy");
 
             waitForBattleEnd(() -> {
                 if (battle.didPlayerWin()) {
