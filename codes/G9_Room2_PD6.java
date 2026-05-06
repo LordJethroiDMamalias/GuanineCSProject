@@ -284,8 +284,8 @@ public class G9_Room2_PD6 implements KeyListener {
     }
     
     private void transitionToG10() {
+        G10_Room1_PD4.openRoom();
         frame.dispose();
-        SwingUtilities.invokeLater(() -> new G10_Room1_PD4());
     }
     
     private void loadSaveData() {

@@ -606,7 +606,10 @@ public class G7_Room2_PD6 implements KeyListener {
             showDialog(new String[]{
                 "RYAN has been defeated.",
                 "The casino is safe."
-            }, () -> frame.requestFocusInWindow());
+            }, () -> { 
+                SwingUtilities.invokeLater(() -> new G8_Room1_PD4().setFrame());
+                frame.dispose();
+            });
         }
     }
 

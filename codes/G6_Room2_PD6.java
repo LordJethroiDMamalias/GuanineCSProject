@@ -398,11 +398,7 @@ public class G6_Room2_PD6 extends JFrame implements KeyListener {
         // ---------- EXIT ----------
         if (answeredTiles.size() >= TOTAL_QUESTIONS && chrpos == EXIT_TILE) {
             SaveSystem.pauseTimer();
-            SaveSystem.saveGame(
-                new SaveSystem.SaveData.Builder("G6_Room2_PD6")
-                    .flags(saveData.flags)
-                    .battles(SaveSystem.getDefeatedBosses())
-            );
+            saveProgress();
 
             dialog.show(getLayeredPane(),
                 new String[]{
