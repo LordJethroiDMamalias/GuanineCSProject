@@ -23,4 +23,4 @@ Don Malek|STATS:HP:130,ATK:12,DEF:5|FLAVOR:Don Malek raises his glass mockingly!
 
 Jardenito|STATS:HP:100,ATK:10,DEF:3|FLAVOR:I'm evil, really evil. You have to save me by defeating me.|FLAVOR_LOW:YO! STOP HURTING ME FOR REAL! Wait, I mean, HURT ME FOR REAL?|PASSIVE:I don't have a passive, my friend. I'm still evil, by the way.|CHECK:I'm evil, my friend. Purify my soul by beating the nite out of me.
 
-Ma'am Kath|STATS:HP:300,ATK:18,DEF:-5|FLAVOR:Ma'am Kath watches you with quiet, terrifying authority.|FLAVOR_LOW:Ma'am Kath's patience is running out. This is your last chance.|PASSIVE:None yet. But don't let your guard down.|CHECK:The final boss. She has seen everything, graded everything, and she is not impressed. Survive long enough to change her mind.
+Ma'am Kath|STATS:HP:200,ATK:18,DEF:-2|FLAVOR:Ma'am Kath watches you with quiet, terrifying authority.|FLAVOR_LOW:Ma'am Kath's patience is running out. This is your last chance.|PASSIVE:None yet. But don't let your guard down.|CHECK:The final boss. She has seen everything, graded everything, and she is not impressed. Survive long enough to change her mind.
